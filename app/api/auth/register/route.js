@@ -14,11 +14,20 @@ export async function POST(request) {
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 })
     }
 
-    // Create user with Supabase
+    // Determine role based on ADMIN_EMAILS env (comma-separated)
+    const adminEmails = (process.env.ADMIN_EMAILS || "")
+      .split(",")
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean)
+
+    const role = adminEmails.includes(email.toLowerCase()) ? "admin" : "user"
+
+    // Create user with Supabase including role in user_metadata
     const { data, error } = await supabaseHelpers.createUser({
       name,
       email,
-      password
+      password,
+      role
     })
 
     if (error) {
@@ -33,7 +42,7 @@ export async function POST(request) {
           id: data.user.id,
           email: data.user.email,
           name: data.user.user_metadata?.name || data.user.email,
-          role: data.user.user_metadata?.role || 'user'
+          role: data.user.user_metadata?.role || role
         },
       },
       { status: 201 },

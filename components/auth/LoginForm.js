@@ -26,7 +26,12 @@ export default function LoginForm() {
     const result = await login(email, password)
 
     if (result.success) {
-      router.push("/")
+      const user = result.user
+      if (user?.role === "admin") {
+        router.push("/admin")
+      } else {
+        router.push("/")
+      }
     } else {
       setError(result.error)
     }

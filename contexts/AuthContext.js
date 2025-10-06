@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         setUser(data.user)
-        return { success: true }
+        return { success: true, user: data.user }
       } else {
         return { success: false, error: data.error }
       }
