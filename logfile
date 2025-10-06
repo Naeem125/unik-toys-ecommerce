@@ -1,0 +1,14 @@
+2025-09-20 18:12:53.566 PKT [90958] LOG:  starting PostgreSQL 14.17 (Homebrew) on x86_64-apple-darwin22.6.0, compiled by Apple clang version 15.0.0 (clang-1500.1.0.2.5), 64-bit
+2025-09-20 18:12:53.573 PKT [90958] LOG:  listening on IPv6 address "::1", port 5432
+2025-09-20 18:12:53.573 PKT [90958] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2025-09-20 18:12:53.575 PKT [90958] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2025-09-20 18:12:53.585 PKT [90971] LOG:  database system was shut down at 2025-09-20 18:12:48 PKT
+2025-09-20 18:12:53.615 PKT [90958] LOG:  database system is ready to accept connections
+2025-09-20 18:13:07.441 PKT [91534] FATAL:  role "postgres" does not exist
+2025-09-20 18:13:07.573 PKT [91541] FATAL:  role "postgres" does not exist
+2025-09-20 18:13:27.188 PKT [92572] ERROR:  operator class "gin_trgm_ops" does not exist for access method "gin"
+2025-09-20 18:13:27.188 PKT [92572] STATEMENT:  CREATE INDEX "products_name_description" ON "products" USING gin ("name" gin_trgm_ops, "description" gin_trgm_ops)
+2025-09-20 18:13:41.140 PKT [93143] ERROR:  null value in column "slug" of relation "categories" violates not-null constraint
+2025-09-20 18:13:41.140 PKT [93143] DETAIL:  Failing row contains (1, Action Figures, null, Superhero and action figure toys, /images/action-figures.jpg, t, 1, 2025-09-20 13:13:41.05+00, 2025-09-20 13:13:41.05+00).
+2025-09-20 18:13:41.140 PKT [93143] STATEMENT:  INSERT INTO "categories" ("id","name","description","image","is_active","sort_order","created_at","updated_at") VALUES (DEFAULT,'Action Figures','Superhero and action figure toys','/images/action-figures.jpg',true,1,'2025-09-20 13:13:41.050 +00:00','2025-09-20 13:13:41.050 +00:00'),(DEFAULT,'Educational Toys','Learning and educational toys for kids','/images/educational-toys.jpg',true,2,'2025-09-20 13:13:41.050 +00:00','2025-09-20 13:13:41.050 +00:00'),(DEFAULT,'Remote Control','RC cars, drones, and remote control toys','/images/remote-control.jpg',true,3,'2025-09-20 13:13:41.050 +00:00','2025-09-20 13:13:41.050 +00:00'),(DEFAULT,'Building Blocks','Construction and building toys','/images/building-blocks.jpg',true,4,'2025-09-20 13:13:41.050 +00:00','2025-09-20 13:13:41.050 +00:00') RETURNING "id","name","slug","description","image","is_active","sort_order","created_at","updated_at";
+2025-09-20 18:13:41.183 PKT [93143] LOG:  could not receive data from client: Connection reset by peer
