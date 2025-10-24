@@ -1,22 +1,18 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Order from "@/models/Order"
-import Product from "@/models/Product"
+import { supabase, supabaseHelpers } from "@/lib/supabase"
 import { requireAuth } from "@/lib/auth"
 
 export const POST = requireAuth(async (request, { user }) => {
   try {
     const { items, shippingAddress, paymentInfo } = await request.json()
 
-    await connectDB()
-
     // Validate items and calculate total
     let subtotal = 0
     const orderItems = []
 
     for (const item of items) {
-      const product = await Product.findById(item.id)
-      if (!product || !product.isActive) {
+      const product = await supabaseHelpers.getProductBySlug(item.slug || item.id)
+      if (!product || !product.is_active) {
         return NextResponse.json({ error: `Product ${item.name} not found` }, { status: 400 })
       }
 
@@ -28,7 +24,7 @@ export const POST = requireAuth(async (request, { user }) => {
       subtotal += itemTotal
 
       orderItems.push({
-        product: product._id,
+        product_id: product.id,
         name: product.name,
         price: product.price,
         quantity: item.quantity,
@@ -36,8 +32,9 @@ export const POST = requireAuth(async (request, { user }) => {
       })
 
       // Update product stock
-      product.stock -= item.quantity
-      await product.save()
+      await supabaseHelpers.updateProduct(product.id, {
+        stock: product.stock - item.quantity
+      })
     }
 
     // Calculate shipping and tax
@@ -45,19 +42,24 @@ export const POST = requireAuth(async (request, { user }) => {
     const tax = subtotal * 0.08 // 8% tax
     const total = subtotal + shippingCost + tax
 
+    // Generate order number
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
+
     // Create order
-    const order = new Order({
-      user: user.id,
+    const orderData = {
+      order_number: orderNumber,
+      user_id: user.id,
       items: orderItems,
-      shippingAddress,
-      paymentInfo,
+      shipping_address: shippingAddress,
+      payment_info: paymentInfo,
       subtotal,
-      shippingCost,
+      shipping_cost: shippingCost,
       tax,
       total,
-    })
+      status: 'pending'
+    }
 
-    await order.save()
+    const order = await supabaseHelpers.createOrder(orderData)
 
     return NextResponse.json({ order }, { status: 201 })
   } catch (error) {
@@ -68,10 +70,7 @@ export const POST = requireAuth(async (request, { user }) => {
 
 export const GET = requireAuth(async (request, { user }) => {
   try {
-    await connectDB()
-
-    const orders = await Order.find({ user: user.id }).sort({ createdAt: -1 }).populate("items.product", "name slug")
-
+    const orders = await supabaseHelpers.getUserOrders(user.id)
     return NextResponse.json({ orders })
   } catch (error) {
     console.error("Get orders error:", error)

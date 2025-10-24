@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Category from "@/models/Category"
+import { supabaseHelpers } from "@/lib/supabase"
 import { requireAdmin } from "@/lib/auth"
 
 export const PUT = requireAdmin(async (request, { params }) => {
   try {
     const updates = await request.json()
-    await connectDB()
-
-    const category = await Category.findByIdAndUpdate(params.id, updates, {
-      new: true,
-      runValidators: true,
-    })
-
-    if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 })
-    }
-
+    const category = await supabaseHelpers.updateCategory(params.id, updates)
     return NextResponse.json({ category })
   } catch (error) {
     console.error("Admin update category error:", error)
@@ -26,14 +15,7 @@ export const PUT = requireAdmin(async (request, { params }) => {
 
 export const DELETE = requireAdmin(async (request, { params }) => {
   try {
-    await connectDB()
-
-    const category = await Category.findByIdAndDelete(params.id)
-
-    if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 })
-    }
-
+    await supabaseHelpers.deleteCategory(params.id)
     return NextResponse.json({ message: "Category deleted successfully" })
   } catch (error) {
     console.error("Admin delete category error:", error)

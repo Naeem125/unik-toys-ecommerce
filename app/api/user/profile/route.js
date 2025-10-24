@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import User from "@/models/User"
+import { supabase } from "@/lib/supabase"
 import { requireAuth } from "@/lib/auth"
 
 export const PUT = requireAuth(async (request, { user }) => {
   try {
     const updates = await request.json()
-    await connectDB()
-
+    
     // Don't allow email updates
     delete updates.email
 
-    const updatedUser = await User.findByIdAndUpdate(user.id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("-password")
+    // Update user metadata in Supabase Auth
+    const { data, error } = await supabase.auth.updateUser({
+      data: {
+        name: updates.name || user.user_metadata?.name,
+        ...updates
+      }
+    })
 
-    if (!updatedUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    if (error) throw error
+
+    // Return updated user info
+    const updatedUser = {
+      id: user.id,
+      email: user.email,
+      name: data.user.user_metadata?.name || user.email,
+      role: data.user.user_metadata?.role || 'user',
+      ...updates
     }
 
     return NextResponse.json({ user: updatedUser })

@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Category from "@/models/Category"
+import { supabaseHelpers } from "@/lib/supabase"
 import { requireAdmin } from "@/lib/auth"
 
 export const GET = requireAdmin(async () => {
   try {
-    await connectDB()
-
-    const categories = await Category.find().sort({ sortOrder: 1, name: 1 }).lean()
-
+    const categories = await supabaseHelpers.getCategories()
     return NextResponse.json({ categories })
   } catch (error) {
     console.error("Admin get categories error:", error)
@@ -19,11 +15,7 @@ export const GET = requireAdmin(async () => {
 export const POST = requireAdmin(async (request) => {
   try {
     const categoryData = await request.json()
-    await connectDB()
-
-    const category = new Category(categoryData)
-    await category.save()
-
+    const category = await supabaseHelpers.createCategory(categoryData)
     return NextResponse.json({ category }, { status: 201 })
   } catch (error) {
     console.error("Admin create category error:", error)

@@ -11,12 +11,10 @@ export async function GET(request) {
 
     return NextResponse.json({
       user: {
-        id: user._id,
-        name: user.name,
+        id: user.id,
+        name: user.user_metadata?.name || user.email,
         email: user.email,
-        role: user.role,
-        address: user.address,
-        phone: user.phone,
+        role: user.user_metadata?.role || 'user',
       },
     })
   } catch (error) {

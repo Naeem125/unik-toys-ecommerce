@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Order from "@/models/Order"
+import { supabase } from "@/lib/supabase"
 import { requireAuth } from "@/lib/auth"
 
 export const GET = requireAuth(async (request, { params, user }) => {
   try {
-    await connectDB()
+    const { data: order, error } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', params.orderId)
+      .eq('user_id', user.id)
+      .single()
 
-    const order = await Order.findOne({
-      _id: params.orderId,
-      user: user.id,
-    }).populate("items.product", "name slug")
-
+    if (error) throw error
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 })
     }

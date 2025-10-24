@@ -1,40 +1,39 @@
 import { NextResponse } from "next/server"
-import connectDB from "@/lib/mongodb"
-import Order from "@/models/Order"
+import { supabase } from "@/lib/supabase"
 import { requireAdmin } from "@/lib/auth"
 
 export const GET = requireAdmin(async (request) => {
   try {
-    await connectDB()
-
     const { searchParams } = new URL(request.url)
     const page = Number.parseInt(searchParams.get("page")) || 1
     const limit = Number.parseInt(searchParams.get("limit")) || 20
     const status = searchParams.get("status")
 
-    const query = {}
+    let query = supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+
     if (status) {
-      query.status = status
+      query = query.eq('status', status)
     }
 
-    const skip = (page - 1) * limit
+    const from = (page - 1) * limit
+    const to = from + limit - 1
 
-    const orders = await Order.find(query)
-      .populate("user", "name email")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean()
+    const { data: orders, error, count } = await query
+      .range(from, to)
+      .select('*', { count: 'exact' })
 
-    const total = await Order.countDocuments(query)
+    if (error) throw error
 
     return NextResponse.json({
-      orders,
+      orders: orders || [],
       pagination: {
         page,
         limit,
-        total,
-        pages: Math.ceil(total / limit),
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit),
       },
     })
   } catch (error) {
