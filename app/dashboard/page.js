@@ -75,7 +75,7 @@ export default function UserDashboard() {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading dashboard...</p>
         </div>
         <Footer />
@@ -160,7 +160,7 @@ export default function UserDashboard() {
                       <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
                         <div className="flex items-center gap-4">
                           <div className="bg-orange-100 p-2 rounded-lg">
-                            <Package className="h-6 w-6 text-orange-600" />
+                            <Package className="h-6 w-6 text-[#b88a44]" />
                           </div>
                           <div>
                             <p className="font-semibold">Order #{order.orderNumber}</p>
@@ -213,7 +213,7 @@ export default function UserDashboard() {
                     Order History
                   </Link>
                 </Button>
-                <Button asChild className="w-full bg-orange-600 hover:bg-orange-700">
+                <Button asChild className="w-full bg-[#b88a44] hover:bg-orange-700">
                   <Link href="/shop">
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     Continue Shopping

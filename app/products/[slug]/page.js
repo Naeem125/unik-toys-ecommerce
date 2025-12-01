@@ -66,7 +66,7 @@ export default function ProductPage({ params }) {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading product...</p>
         </div>
         <Footer />
@@ -96,15 +96,15 @@ export default function ProductPage({ params }) {
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-8">
-          <Link href="/" className="hover:text-orange-600">
+          <Link href="/" className="hover:text-[#b88a44]">
             Home
           </Link>
           <span>/</span>
-          <Link href="/shop" className="hover:text-orange-600">
+          <Link href="/shop" className="hover:text-[#b88a44]">
             Shop
           </Link>
           <span>/</span>
-          <Link href={`/shop?category=${product.category.slug}`} className="hover:text-orange-600">
+          <Link href={`/shop?category=${product.category.slug}`} className="hover:text-[#b88a44]">
             {product.category.name}
           </Link>
           <span>/</span>
@@ -121,7 +121,7 @@ export default function ProductPage({ params }) {
                 fill
                 className="object-cover"
               />
-              {product.isFeatured && <Badge className="absolute top-4 left-4 bg-orange-600">Featured</Badge>}
+              {product.isFeatured && <Badge className="absolute top-4 left-4 bg-[#b88a44]">Featured</Badge>}
               {discountPercentage > 0 && (
                 <Badge variant="destructive" className="absolute top-4 right-4">
                   -{discountPercentage}%
@@ -137,7 +137,7 @@ export default function ProductPage({ params }) {
                     key={index}
                     onClick={() => setSelectedImage(index)}
                     className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 ${
-                      selectedImage === index ? "border-orange-600" : "border-gray-200"
+                      selectedImage === index ? "border-[#b88a44]" : "border-gray-200"
                     }`}
                   >
                     <Image
@@ -179,7 +179,7 @@ export default function ProductPage({ params }) {
 
               {/* Price */}
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl font-bold text-orange-600">${product.price}</span>
+                <span className="text-3xl font-bold text-[#b88a44]">${product.price}</span>
                 {product.comparePrice && (
                   <span className="text-xl text-gray-500 line-through">${product.comparePrice}</span>
                 )}
@@ -234,7 +234,7 @@ export default function ProductPage({ params }) {
                 <Button
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  className="flex-1 bg-[#b88a44] hover:bg-orange-700"
                   size="lg"
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
@@ -257,21 +257,21 @@ export default function ProductPage({ params }) {
             {/* Features */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Truck className="h-5 w-5 text-orange-600" />
+                <Truck className="h-5 w-5 text-[#b88a44]" />
                 <div>
                   <p className="font-medium text-sm">Free Shipping</p>
                   <p className="text-xs text-gray-600">On orders over $50</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Shield className="h-5 w-5 text-orange-600" />
+                <Shield className="h-5 w-5 text-[#b88a44]" />
                 <div>
                   <p className="font-medium text-sm">Safety Tested</p>
                   <p className="text-xs text-gray-600">CPSC compliant</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <RotateCcw className="h-5 w-5 text-orange-600" />
+                <RotateCcw className="h-5 w-5 text-[#b88a44]" />
                 <div>
                   <p className="font-medium text-sm">30-Day Returns</p>
                   <p className="text-xs text-gray-600">Easy returns</p>

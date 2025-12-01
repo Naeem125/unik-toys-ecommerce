@@ -211,7 +211,7 @@ export default function FAQPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-1">{faq.question}</h3>
-                            <p className="text-sm text-orange-600">{faq.category}</p>
+                            <p className="text-sm text-[#b88a44]">{faq.category}</p>
                           </div>
                           {openItems.has(faq.id) ? (
                             <ChevronUp className="h-5 w-5 text-gray-500 flex-shrink-0" />
@@ -284,12 +284,12 @@ export default function FAQPage() {
         <div className="max-w-2xl mx-auto mt-16 text-center">
           <Card className="bg-orange-50 border-orange-200">
             <CardContent className="p-8">
-              <HelpCircle className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+              <HelpCircle className="h-12 w-12 text-[#b88a44] mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Still have questions?</h3>
               <p className="text-gray-600 mb-6">
                 Can't find what you're looking for? Our customer support team is here to help.
               </p>
-              <Button asChild className="bg-orange-600 hover:bg-orange-700">
+              <Button asChild className="bg-[#b88a44] hover:bg-[#d79532]">
                 <a href="/contact">Contact Support</a>
               </Button>
             </CardContent>

@@ -1,5 +1,24 @@
 import { NextResponse } from "next/server"
-import { supabaseHelpers } from "@/lib/supabase"
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
+
+// Helper function for creating user (server-side only)
+async function createUser(userData) {
+  console.log("Creating user with data:", userData)
+  const role = userData.role?.trim() || "user";
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email: userData.email,
+    password: userData.password,
+    email_confirm: true, // Auto-confirm email
+    user_metadata: {
+      name: userData.name,
+        display_name: userData.name,
+      role: role
+    },
+  })
+  if (error) throw error
+  console.log("createUser data:", data)
+  return data
+}
 
 export async function POST(request) {
   try {
@@ -22,35 +41,38 @@ export async function POST(request) {
 
     const role = adminEmails.includes(email.toLowerCase()) ? "admin" : "user"
 
-    // Create user with Supabase including role in user_metadata
-    const { data, error } = await supabaseHelpers.createUser({
+    // Create user with Supabase Admin
+    const data = await createUser({
       name,
       email,
       password,
       role
     })
 
-    if (error) {
-      return NextResponse.json({ error: "User already exists with this email" }, { status: 400 })
-    }
-
-    // Create response
-    const response = NextResponse.json(
+    // Return success response
+    return NextResponse.json(
       {
         message: "User registered successfully",
         user: {
           id: data.user.id,
           email: data.user.email,
-          name: data.user.user_metadata?.name || data.user.email,
+          name: data.user.user_metadata?.name || name,
           role: data.user.user_metadata?.role || role
         },
       },
-      { status: 201 },
+      { status: 201 }
     )
-
-    return response
   } catch (error) {
     console.error("Registration error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    
+    // Handle specific Supabase errors
+    if (error.message?.includes("already registered") || error.message?.includes("already exists")) {
+      return NextResponse.json({ error: "User already exists with this email" }, { status: 400 })
+    }
+    
+    return NextResponse.json(
+      { error: error.message || "Internal server error" }, 
+      { status: 500 }
+    )
   }
 }

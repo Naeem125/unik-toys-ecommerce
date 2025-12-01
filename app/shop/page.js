@@ -14,115 +14,95 @@ import { Search } from "lucide-react"
 export default function ShopPage() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 })
-
-  // Dummy products for demonstration
-  const getDummyProducts = () => [
-    {
-      id: 'dummy-1',
-      name: 'Premium Building Blocks Set',
-      description: 'High-quality wooden building blocks for creative play and learning.',
-      price: 24.99,
-      comparePrice: 34.99,
-      images: [{ url: '/placeholder.svg?height=300&width=300&query=building+blocks', alt: 'Building Blocks' }],
-      stock: 15,
-      is_featured: false,
-      slug: 'premium-building-blocks-set',
-      category: { name: 'Educational Toys', slug: 'educational' }
-    },
-    {
-      id: 'dummy-2',
-      name: 'Remote Control Car',
-      description: 'Fast and durable RC car with LED lights and rechargeable battery.',
-      price: 89.99,
-      comparePrice: 119.99,
-      images: [{ url: '/placeholder.svg?height=300&width=300&query=rc+car', alt: 'Remote Control Car' }],
-      stock: 8,
-      is_featured: true,
-      slug: 'remote-control-car',
-      category: { name: 'Remote Control', slug: 'remote-control' }
-    }
-  ]
 
   const searchParams = useSearchParams()
 
   useEffect(() => {
     const category = searchParams.get("category") || "all"
     const search = searchParams.get("search") || ""
-    const featured = searchParams.get("featured") || ""
+    const sort = searchParams.get("sortBy") || "newest"
 
     setSelectedCategory(category)
     setSearchQuery(search)
+    setSortBy(sort)
 
     fetchCategories()
-    fetchProducts(1, category, search, featured)
-  }, [searchParams])
+    fetchProducts(1, category, search, sort, true)
+  }, [])
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch("/api/categories")
-      const data = await response.json()
+      const res = await fetch("/api/categories")
+      const data = await res.json()
       setCategories(data.categories || [])
-    } catch (error) {
-      console.error("Error fetching categories:", error)
+    } catch (err) {
+      console.error("Failed to fetch categories", err)
     }
   }
 
-  const fetchProducts = async (page = 1, category = "", search = "", featured = "") => {
-    setLoading(true)
+  const fetchProducts = async (page, category, search, sort, isInitial = false) => {
+    if (isInitial) setInitialLoading(true)
+    else setLoading(true)
+
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: "12",
+        category,
+        search,
+        sortBy: sort
       })
 
-      if (category) params.append("category", category)
-      if (search) params.append("search", search)
-      if (featured) params.append("featured", featured)
-
-      const response = await fetch(`/api/products?${params}`)
-      const data = await response.json()
-
+      const res = await fetch(`/api/products?${params}`)
+      const data = await res.json()
       setProducts(data.products || [])
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 })
-    } catch (error) {
-      console.error("Error fetching products:", error)
+    } catch (err) {
+      console.error("Failed to fetch products", err)
     } finally {
-      setLoading(false)
+      if (isInitial) setInitialLoading(false)
+      else setLoading(false)
     }
+  }
+
+  const updateUrlAndFetch = (category, search, sort) => {
+    const params = new URLSearchParams()
+    if (category && category !== "all") params.set("category", category)
+    if (search) params.set("search", search)
+    if (sort && sort !== "newest") params.set("sortBy", sort)
+    window.history.pushState({}, "", `/shop?${params.toString()}`)
+    fetchProducts(1, category, search, sort)
   }
 
   const handleSearch = (e) => {
     e.preventDefault()
-    const params = new URLSearchParams()
-    if (searchQuery) params.append("search", searchQuery)
-    if (selectedCategory) params.append("category", selectedCategory)
-    window.history.pushState({}, "", `/shop?${params}`)
-    fetchProducts(1, selectedCategory, searchQuery)
+    updateUrlAndFetch(selectedCategory, searchQuery, sortBy)
   }
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category)
-    const params = new URLSearchParams()
-    if (category) params.append("category", category)
-    if (searchQuery) params.append("search", searchQuery)
-    window.history.pushState({}, "", `/shop?${params}`)
-    fetchProducts(1, category, searchQuery)
+    updateUrlAndFetch(category, searchQuery, sortBy)
+  }
+
+  const handleSortChange = (value) => {
+    setSortBy(value)
+    updateUrlAndFetch(selectedCategory, searchQuery, value)
   }
 
   const handlePageChange = (page) => {
-    fetchProducts(page, selectedCategory, searchQuery)
+    fetchProducts(page, selectedCategory, searchQuery, sortBy)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
-
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
@@ -161,8 +141,8 @@ export default function ShopPage() {
               </SelectContent>
             </Select>
 
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
+            {/* Sort Filter */}
+            <Select value={sortBy} onValueChange={handleSortChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -174,14 +154,13 @@ export default function ShopPage() {
               </SelectContent>
             </Select>
 
-            {/* Clear Filters */}
             <Button
               variant="outline"
               onClick={() => {
                 setSearchQuery("")
                 setSelectedCategory("all")
-                window.history.pushState({}, "", "/shop")
-                fetchProducts(1)
+                setSortBy("newest")
+                updateUrlAndFetch("all", "", "newest")
               }}
             >
               Clear Filters
@@ -196,7 +175,7 @@ export default function ShopPage() {
                 <button
                   onClick={() => {
                     setSearchQuery("")
-                    fetchProducts(1, selectedCategory)
+                    updateUrlAndFetch(selectedCategory, "", sortBy)
                   }}
                   className="ml-1 hover:text-red-600"
                 >
@@ -204,13 +183,13 @@ export default function ShopPage() {
                 </button>
               </Badge>
             )}
-            {selectedCategory && selectedCategory !== "all" && (
+            {selectedCategory !== "all" && (
               <Badge variant="secondary" className="flex items-center gap-1">
                 Category: {categories.find((c) => c.slug === selectedCategory)?.name}
                 <button
                   onClick={() => {
                     setSelectedCategory("all")
-                    fetchProducts(1, "", searchQuery)
+                    updateUrlAndFetch("all", searchQuery, sortBy)
                   }}
                   className="ml-1 hover:text-red-600"
                 >
@@ -221,15 +200,8 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* Results Count */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Showing {products.length} of {pagination.total} products
-          </p>
-        </div>
-
         {/* Products Grid */}
-        {loading ? (
+        {(loading || initialLoading) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(12)].map((_, i) => (
               <div key={i} className="animate-pulse">
@@ -244,38 +216,22 @@ export default function ShopPage() {
             {products.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
-            {/* Add dummy products if we have less than 8 products */}
-            {products.length < 8 && getDummyProducts().slice(0, 8 - products.length).map((dummyProduct) => (
-              <ProductCard key={dummyProduct.id} product={dummyProduct} />
-            ))}
           </div>
         ) : (
-          <div>
-            <div className="text-center py-8">
-              <p className="text-gray-500 text-lg mb-4">No products found matching your criteria.</p>
-              <Button
-                variant="outline"
-                className="mb-8"
-                style={{
-                  backgroundColor: '#f0e9d8',
-                  borderColor: '#b88a49',
-                  color: '#b88a49'
-                }}
-                onClick={() => {
-                  setSearchQuery("")
-                  setSelectedCategory("all")
-                  fetchProducts(1)
-                }}
-              >
-                View All Products
-              </Button>
-            </div>
-            {/* Show dummy products when no products found */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {getDummyProducts().map((dummyProduct) => (
-                <ProductCard key={dummyProduct.id} product={dummyProduct} />
-              ))}
-            </div>
+          <div className="text-center py-8">
+            <p className="text-gray-500 text-lg mb-4">No products found matching your criteria.</p>
+            <Button
+              variant="outline"
+              className="mb-8"
+              onClick={() => {
+                setSearchQuery("")
+                setSelectedCategory("all")
+                setSortBy("newest")
+                updateUrlAndFetch("all", "", "newest")
+              }}
+            >
+              View All Products
+            </Button>
           </div>
         )}
 
@@ -295,7 +251,6 @@ export default function ShopPage() {
                   key={i + 1}
                   variant={pagination.page === i + 1 ? "default" : "outline"}
                   onClick={() => handlePageChange(i + 1)}
-                  className={pagination.page === i + 1 ? "bg-orange-600 hover:bg-orange-700" : ""}
                 >
                   {i + 1}
                 </Button>
@@ -311,7 +266,6 @@ export default function ShopPage() {
           </div>
         )}
       </div>
-
       <Footer />
     </div>
   )

@@ -9,6 +9,7 @@ import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import ProductCard from "@/components/products/ProductCard"
 import { ArrowRight, Shield, Truck, HeartHandshake } from "lucide-react"
+import { supabaseHelpers } from "@/lib/supabase"
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -21,16 +22,14 @@ export default function HomePage() {
 
   const fetchData = async () => {
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        fetch("/api/products?featured=true&limit=6"),
-        fetch("/api/categories"),
+      const [categoriesData, productsData] = await Promise.all([
+        supabaseHelpers.getCategories(),
+        supabaseHelpers.getProducts({featured:true})
       ])
+    
 
-      const productsData = await productsRes.json()
-      const categoriesData = await categoriesRes.json()
-
-      setFeaturedProducts(productsData.products || [])
-      setCategories(categoriesData.categories || [])
+      setFeaturedProducts(productsData)
+      setCategories(categoriesData)
     } catch (error) {
       console.error("Error fetching data:", error)
     } finally {
@@ -55,7 +54,7 @@ export default function HomePage() {
                 Guaranteed lowest prices with free shipping on orders over $50!
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button asChild size="lg" className="text-white shadow-lg hover:shadow-amber-500/25 transition-all duration-200" style={{ backgroundColor: '#b88a49' }}>
+                <Button asChild size="lg" className="text-white shadow-lg " style={{ backgroundColor: '#b88a49' }}>
                   <Link href="/shop">
                     Shop Now <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>

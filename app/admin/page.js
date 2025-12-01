@@ -4,25 +4,25 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import Header from "@/components/layout/Header"
-import Footer from "@/components/layout/Footer"
-import { supabaseHelpers } from "@/lib/supabase"
-import { Plus, Save, Edit, Trash2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import AdminLayout from "@/components/admin/AdminLayout"
+import { supabase, supabaseHelpers } from "@/lib/supabase"
+import { Plus, Edit, Trash2, X } from "lucide-react"
 
-export default function AdminPage() {
+export default function AdminProducts() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
 
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -37,7 +37,7 @@ export default function AdminPage() {
     age_range: { min: "", max: "" },
     tags: "",
     is_featured: false,
-    images: [{ url: "", alt: "", isPrimary: true }]
+    images: []
   })
 
   useEffect(() => {
@@ -68,15 +68,6 @@ export default function AdminPage() {
     }))
   }
 
-  const handleArrayInputChange = (field, index, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: prev[field].map((item, i) => 
-        i === index ? { ...item, ...value } : item
-      )
-    }))
-  }
-
   const handleObjectInputChange = (field, subField, value) => {
     setFormData(prev => ({
       ...prev,
@@ -87,14 +78,76 @@ export default function AdminPage() {
     }))
   }
 
+  const handleFileChange = (e) => {
+    const files = e.target.files
+    if (!files) return
+
+    const newImages = Array.from(files).map(file => ({
+      file,
+      url: URL.createObjectURL(file)
+    }))
+
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...newImages]
+    }))
+
+    e.target.value = null
+  }
+
+  const removeImage = (index) => {
+    setFormData(prev => {
+      URL.revokeObjectURL(prev.images[index].url)
+      return {
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }
+    })
+  }
+
+  const uploadImages = async () => {
+    const uploadedImages = []
+
+    for (let i = 0; i < formData.images.length; i++) {
+      const img = formData.images[i]
+      if (img.url.startsWith("http")) {
+        uploadedImages.push({ url: img.url, alt: "" })
+        continue
+      }
+      const file = img.file
+      if (!file) continue
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `products/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file)
+
+      if (error) {
+        throw new Error(`Failed to upload image: ${error.message}`)
+      }
+
+      const { data: publicUrlData } = supabase
+        .storage
+        .from("product-images")
+        .getPublicUrl(filePath)
+
+      uploadedImages.push({ url: publicUrlData.publicUrl, alt: "" })
+    }
+
+    return uploadedImages
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setError("")
-    setSuccess("")
 
     try {
-      // Generate slug from name
+      const uploadedImages = await uploadImages()
+
       const slug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -116,45 +169,30 @@ export default function AdminPage() {
           min: parseInt(formData.age_range.min) || null,
           max: parseInt(formData.age_range.max) || null
         },
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        images: uploadedImages
       }
 
       if (editingProduct) {
         await supabaseHelpers.updateProduct(editingProduct.id, productData)
-        setSuccess("Product updated successfully!")
       } else {
         await supabaseHelpers.createProduct(productData)
-        setSuccess("Product created successfully!")
       }
 
-      // Reset form
-      setFormData({
-        name: "",
-        description: "",
-        short_description: "",
-        price: "",
-        compare_price: "",
-        category_id: "",
-        stock: "",
-        sku: "",
-        weight: "",
-        dimensions: { length: "", width: "", height: "" },
-        age_range: { min: "", max: "" },
-        tags: "",
-        is_featured: false,
-        images: [{ url: "", alt: "", isPrimary: true }]
-      })
-      setEditingProduct(null)
+      setIsDialogOpen(false)
+      resetForm()
       fetchData()
     } catch (error) {
       console.error("Error saving product:", error)
-      setError("Failed to save product")
+      setError(error.message || "Failed to save product")
     } finally {
       setSaving(false)
     }
   }
 
   const handleEdit = (product) => {
+    const images = (product.images || []).map(img => ({ url: img.url }))
+
     setEditingProduct(product)
     setFormData({
       name: product.name || "",
@@ -170,8 +208,9 @@ export default function AdminPage() {
       age_range: product.age_range || { min: "", max: "" },
       tags: product.tags ? product.tags.join(', ') : "",
       is_featured: product.is_featured || false,
-      images: product.images || [{ url: "", alt: "", isPrimary: true }]
+      images
     })
+    setIsDialogOpen(true)
   }
 
   const handleDelete = async (productId) => {
@@ -179,7 +218,6 @@ export default function AdminPage() {
 
     try {
       await supabaseHelpers.deleteProduct(productId)
-      setSuccess("Product deleted successfully!")
       fetchData()
     } catch (error) {
       console.error("Error deleting product:", error)
@@ -187,70 +225,62 @@ export default function AdminPage() {
     }
   }
 
-  const addImageField = () => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, { url: "", alt: "", isPrimary: false }]
-    }))
+  const resetForm = () => {
+    setEditingProduct(null)
+    setFormData({
+      name: "",
+      description: "",
+      short_description: "",
+      price: "",
+      compare_price: "",
+      category_id: "",
+      stock: "",
+      sku: "",
+      weight: "",
+      dimensions: { length: "", width: "", height: "" },
+      age_range: { min: "", max: "" },
+      tags: "",
+      is_featured: false,
+      images: []
+    })
+    setError("")
   }
 
-  const removeImageField = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }))
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(cat => cat.id === categoryId)
+    return category ? category.name : "Unknown"
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-            <p className="text-amber-700 font-medium">Loading admin panel...</p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    )
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
-          <p className="text-gray-600">Manage products and categories</p>
-        </div>
-
-        {error && (
-          <Alert className="mb-6 border-red-200 bg-red-50">
-            <AlertDescription className="text-red-800">{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {success && (
-          <Alert className="mb-6 border-green-200 bg-green-50">
-            <AlertDescription className="text-green-800">{success}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Product Form */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                {editingProduct ? "Edit Product" : "Add New Product"}
-              </CardTitle>
-              <CardDescription>
-                {editingProduct ? "Update product information" : "Create a new product"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <p className="text-gray-600">Manage your products</p>
+          </div>
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open)
+              if (!open) resetForm()
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button className="bg-[#b88a44] hover:bg-orange-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
+              </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -261,7 +291,6 @@ export default function AdminPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      placeholder="Enter product name"
                     />
                   </div>
                   <div>
@@ -271,7 +300,6 @@ export default function AdminPage() {
                       name="sku"
                       value={formData.sku}
                       onChange={handleInputChange}
-                      placeholder="Enter SKU"
                     />
                   </div>
                 </div>
@@ -284,7 +312,6 @@ export default function AdminPage() {
                     value={formData.description}
                     onChange={handleInputChange}
                     required
-                    placeholder="Enter product description"
                     rows={3}
                   />
                 </div>
@@ -296,7 +323,6 @@ export default function AdminPage() {
                     name="short_description"
                     value={formData.short_description}
                     onChange={handleInputChange}
-                    placeholder="Enter short description"
                   />
                 </div>
 
@@ -311,7 +337,6 @@ export default function AdminPage() {
                       value={formData.price}
                       onChange={handleInputChange}
                       required
-                      placeholder="0.00"
                     />
                   </div>
                   <div>
@@ -323,7 +348,6 @@ export default function AdminPage() {
                       step="0.01"
                       value={formData.compare_price}
                       onChange={handleInputChange}
-                      placeholder="0.00"
                     />
                   </div>
                   <div>
@@ -335,7 +359,6 @@ export default function AdminPage() {
                       value={formData.stock}
                       onChange={handleInputChange}
                       required
-                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -356,6 +379,17 @@ export default function AdminPage() {
                   </Select>
                 </div>
 
+                <div>
+                  <Label htmlFor="tags">Tags (comma separated)</Label>
+                  <Input
+                    id="tags"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleInputChange}
+                    placeholder="tag1, tag2, tag3"
+                  />
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <input
                     id="is_featured"
@@ -369,125 +403,106 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="tags">Tags (comma separated)</Label>
+                  <Label htmlFor="images">Images</Label>
                   <Input
-                    id="tags"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleInputChange}
-                    placeholder="tag1, tag2, tag3"
+                    id="images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
                   />
-                </div>
-
-                {/* Images */}
-                <div>
-                  <Label>Images</Label>
-                  {formData.images.map((image, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <Input
-                        placeholder="Image URL"
-                        value={image.url}
-                        onChange={(e) => handleArrayInputChange('images', index, { url: e.target.value })}
-                      />
-                      <Input
-                        placeholder="Alt text"
-                        value={image.alt}
-                        onChange={(e) => handleArrayInputChange('images', index, { alt: e.target.value })}
-                      />
-                      {formData.images.length > 1 && (
-                        <Button
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.images.map((image, index) => (
+                      <div key={index} className="relative w-20 h-20 border rounded overflow-hidden">
+                        <img src={image.url} alt="" className="object-cover w-full h-full" />
+                        <button
                           type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeImageField(index)}
+                          onClick={() => removeImage(index)}
+                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addImageField}
-                    className="mt-2"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Image
-                  </Button>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full"
-                  style={{ backgroundColor: '#b88a49' }}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saving ? "Saving..." : editingProduct ? "Update Product" : "Create Product"}
-                </Button>
-
-                {editingProduct && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setEditingProduct(null)
-                      setFormData({
-                        name: "",
-                        description: "",
-                        short_description: "",
-                        price: "",
-                        compare_price: "",
-                        category_id: "",
-                        stock: "",
-                        sku: "",
-                        weight: "",
-                        dimensions: { length: "", width: "", height: "" },
-                        age_range: { min: "", max: "" },
-                        tags: "",
-                        is_featured: false,
-                        images: [{ url: "", alt: "", isPrimary: true }]
-                      })
-                    }}
-                    className="w-full"
-                  >
-                    Cancel Edit
-                  </Button>
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
-              </form>
-            </CardContent>
-          </Card>
 
-          {/* Products List */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Products ({products.length})</CardTitle>
-              <CardDescription>Manage existing products</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{product.name}</h3>
-                      <p className="text-sm text-gray-600">${product.price}</p>
-                      <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={saving} className="bg-[#b88a44] hover:bg-orange-700">
+                    {saving ? "Saving..." : editingProduct ? "Update Product" : "Create Product"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {error && !isDialogOpen && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Products List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Products ({products.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="animate-pulse flex items-center gap-4 p-4 border rounded-lg">
+                    <div className="bg-gray-200 w-16 h-16 rounded"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="bg-gray-200 h-4 rounded w-1/3"></div>
+                      <div className="bg-gray-200 h-3 rounded w-1/2"></div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(product)}
-                      >
+                  </div>
+                ))}
+              </div>
+            ) : products.length > 0 ? (
+              <div className="space-y-4">
+                {products.map((product) => (
+                  <div key={product.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    {product.images && product.images[0] && (
+                      <img
+                        src={product.images[0].url}
+                        alt={product.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    )}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{product.name}</h3>
+                      <p className="text-sm text-gray-600">{product.short_description}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary">${product.price}</Badge>
+                        <Badge variant={product.stock > 0 ? "default" : "destructive"}>
+                          Stock: {product.stock}
+                        </Badge>
+                        {product.is_featured && <Badge>Featured</Badge>}
+                        <span className="text-sm text-gray-500">{getCategoryName(product.category_id)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -495,12 +510,17 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No products found</p>
+                <Button onClick={() => setIsDialogOpen(true)} className="mt-4">
+                  Add your first product
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-
-      <Footer />
-    </div>
+    </AdminLayout>
   )
-}
+} 

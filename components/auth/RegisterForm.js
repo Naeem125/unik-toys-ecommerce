@@ -50,7 +50,7 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-bold text-orange-600">Create Account</CardTitle>
+        <CardTitle className="text-2xl font-bold text-[#b88a44]">Create Account</CardTitle>
         <CardDescription>Join Unique Toys for the best toy shopping experience</CardDescription>
       </CardHeader>
       <CardContent>
@@ -109,13 +109,13 @@ export default function RegisterForm() {
             />
           </div>
 
-          <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
+          <Button type="submit" className="w-full bg-[#b88a44] hover:bg-orange-700" disabled={loading}>
             {loading ? "Creating Account..." : "Create Account"}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-orange-600 hover:underline">
+            <Link href="/login" className="text-[#b88a44] hover:underline">
               Sign in
             </Link>
           </div>

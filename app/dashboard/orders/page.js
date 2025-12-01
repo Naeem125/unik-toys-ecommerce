@@ -92,7 +92,7 @@ export default function OrderHistory() {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading orders...</p>
         </div>
         <Footer />
@@ -241,7 +241,7 @@ export default function OrderHistory() {
                           </Link>
                         </Button>
                         {order.status === "delivered" && (
-                          <Button size="sm" className="bg-orange-600 hover:bg-orange-700">
+                          <Button size="sm" className="bg-[#b88a44] hover:bg-orange-700">
                             Reorder
                           </Button>
                         )}
@@ -262,7 +262,7 @@ export default function OrderHistory() {
                   ? "Try adjusting your search or filter criteria"
                   : "You haven't placed any orders yet"}
               </p>
-              <Button asChild className="bg-orange-600 hover:bg-orange-700">
+              <Button asChild className="bg-[#b88a44] hover:bg-orange-700">
                 <Link href="/shop">Start Shopping</Link>
               </Button>
             </CardContent>

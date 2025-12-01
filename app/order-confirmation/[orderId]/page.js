@@ -35,7 +35,7 @@ export default function OrderConfirmationPage({ params }) {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading order details...</p>
         </div>
         <Footer />
@@ -146,14 +146,14 @@ export default function OrderConfirmationPage({ params }) {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <Package className="h-5 w-5 text-orange-600" />
+                  <Package className="h-5 w-5 text-[#b88a44]" />
                   <div>
                     <p className="font-medium">Order Processing</p>
                     <p className="text-sm text-gray-600">We're preparing your items for shipment</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Truck className="h-5 w-5 text-orange-600" />
+                  <Truck className="h-5 w-5 text-[#b88a44]" />
                   <div>
                     <p className="font-medium">Shipping</p>
                     <p className="text-sm text-gray-600">You'll receive a tracking number once your order ships</p>
@@ -168,7 +168,7 @@ export default function OrderConfirmationPage({ params }) {
             <Button asChild variant="outline">
               <Link href="/dashboard">View Order History</Link>
             </Button>
-            <Button asChild className="bg-orange-600 hover:bg-orange-700">
+            <Button asChild className="bg-[#b88a44] hover:bg-orange-700">
               <Link href="/shop">Continue Shopping</Link>
             </Button>
           </div>

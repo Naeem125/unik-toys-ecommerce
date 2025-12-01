@@ -117,7 +117,7 @@ export default function AboutPage() {
                 <Card key={index} className="text-center">
                   <CardContent className="p-6">
                     <div className="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Icon className="h-8 w-8 text-orange-600" />
+                      <Icon className="h-8 w-8 text-[#b88a44]" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
                     <p className="text-gray-600">{value.description}</p>
@@ -142,7 +142,7 @@ export default function AboutPage() {
                     <Users className="h-12 w-12 text-gray-400" />
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-1">{member.name}</h3>
-                  <p className="text-orange-600 font-medium mb-3">{member.role}</p>
+                  <p className="text-[#b88a44] font-medium mb-3">{member.role}</p>
                   <p className="text-gray-600">{member.description}</p>
                 </CardContent>
               </Card>

@@ -85,7 +85,7 @@ export default function OrderDetails({ params }) {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading order details...</p>
         </div>
         <Footer />
@@ -141,7 +141,7 @@ export default function OrderDetails({ params }) {
                               step.completed
                                 ? "bg-green-100 text-green-600"
                                 : step.active
-                                  ? "bg-orange-100 text-orange-600"
+                                  ? "bg-orange-100 text-[#b88a44]"
                                   : "bg-gray-100 text-gray-400"
                             }`}
                           >
@@ -283,7 +283,7 @@ export default function OrderDetails({ params }) {
             {/* Actions */}
             <div className="space-y-3">
               {order.status === "delivered" && (
-                <Button className="w-full bg-orange-600 hover:bg-orange-700">Reorder Items</Button>
+                <Button className="w-full bg-[#b88a44] hover:bg-orange-700">Reorder Items</Button>
               )}
               <Button variant="outline" className="w-full bg-transparent" asChild>
                 <Link href="/contact">Need Help?</Link>

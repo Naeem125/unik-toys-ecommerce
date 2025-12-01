@@ -7,16 +7,16 @@ export async function GET(request) {
     const category = searchParams.get("category")
     const search = searchParams.get("search")
     const featured = searchParams.get("featured")
+    const sortBy = searchParams.get("sortBy") || "newest"
     const page = Number.parseInt(searchParams.get("page")) || 1
     const limit = Number.parseInt(searchParams.get("limit")) || 12
 
-    // Build filters for Supabase
     const filters = {
       category,
       search,
       featured: featured === "true",
-      limit,
-      sortBy: "newest"
+      sortBy,
+      limit
     }
 
     const products = await supabaseHelpers.getProducts(filters)
@@ -24,7 +24,7 @@ export async function GET(request) {
     return NextResponse.json({
       products,
       pagination: {
-        page: 1,
+        page,
         limit: products.length,
         total: products.length,
         pages: 1,

@@ -265,7 +265,7 @@ function CheckoutForm() {
               <Button
                 type="submit"
                 disabled={!stripe || loading}
-                className="w-full bg-orange-600 hover:bg-orange-700"
+                className="w-full bg-[#b88a44] hover:bg-orange-700"
                 size="lg"
               >
                 {loading ? "Processing..." : `Pay $${total.toFixed(2)}`}

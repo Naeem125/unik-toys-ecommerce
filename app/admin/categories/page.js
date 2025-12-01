@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { useAuth } from "@/contexts/AuthContext"
-import { Plus, Edit, Trash2 } from "lucide-react"
+import { Plus, Edit, Trash2, X } from "lucide-react"
+import { supabase, supabaseHelpers } from "@/lib/supabase"
 
 export default function AdminCategories() {
   const { user, loading } = useAuth()
@@ -22,35 +23,25 @@ export default function AdminCategories() {
   const [error, setError] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const allowedRoles = ["admin", "superadmin"]
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    image: "",
-    sortOrder: 0,
+    sort_order: 0,
+    image: null // Changed to handle file object
   })
 
   useEffect(() => {
-    if (!loading && (!user || user.role !== "admin")) {
-      router.push("/")
-      return
-    }
-
-    if (user && user.role === "admin") {
-      fetchCategories()
-    }
-  }, [user, loading, router])
+    fetchCategories()
+  }, [])
 
   const fetchCategories = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch("/api/admin/categories")
-      const data = await response.json()
-
-      if (response.ok) {
-        setCategories(data.categories || [])
-      } else {
-        setError(data.error || "Failed to fetch categories")
-      }
+      const categoriesData = await supabaseHelpers.getCategories()
+      setCategories(categoriesData)
     } catch (error) {
       console.error("Error fetching categories:", error)
       setError("Failed to fetch categories")
@@ -59,45 +50,124 @@ export default function AdminCategories() {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError("")
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file)
+
+    setFormData(prev => ({
+      ...prev,
+      image: {
+        file,
+        url: previewUrl
+      }
+    }))
+
+    // Clear the input value
+    e.target.value = null
+  }
+
+  const removeImage = () => {
+    if (formData.image?.url && !formData.image.url.startsWith("http")) {
+      URL.revokeObjectURL(formData.image.url)
+    }
+    setFormData(prev => ({
+      ...prev,
+      image: null
+    }))
+  }
+
+  const uploadImage = async () => {
+    if (!formData.image) return null
+
+    // If image already has a URL that starts with http (already uploaded), return it
+    if (formData.image.url?.startsWith("http") && !formData.image.file) {
+      return formData.image.url
+    }
+
+    const file = formData.image.file
+    if (!file) return null
 
     try {
-      const url = editingCategory ? `/api/admin/categories/${editingCategory._id}` : "/api/admin/categories"
-      const method = editingCategory ? "PUT" : "POST"
+      const fileExt = file.name.split('.').pop()
+      const fileName = `categories/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = fileName
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
+      const { data, error } = await supabase.storage
+        .from("product-images")
+        .upload(filePath, file)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        fetchCategories()
-        setIsDialogOpen(false)
-        setEditingCategory(null)
-        setFormData({ name: "", description: "", image: "", sortOrder: 0 })
-      } else {
-        setError(data.error || "Failed to save category")
+      if (error) {
+        throw new Error(`Failed to upload image: ${error.message}`)
       }
+
+      const { data: publicUrlData } = supabase
+        .storage
+        .from("product-images")
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
     } catch (error) {
-      console.error("Error saving category:", error)
-      setError("Failed to save category")
+      console.error("Error uploading image:", error)
+      throw error
     }
   }
+
+  function slugify(str) {
+    return str
+      .toLowerCase()
+      .trim()
+      .replace(/[\s\W-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      // Upload image if there's a new one
+      const imageUrl = await uploadImage();
+
+      const categoryData = {
+        name: formData.name,
+        description: formData.description,
+        image: imageUrl || formData.image?.url || "",
+        sort_order: formData.sort_order,
+        slug: slugify(formData.name)
+      };
+
+
+      // 🔄 Use Supabase helpers instead of API fetch
+      if (editingCategory) {
+        await supabaseHelpers.updateCategory(editingCategory.id, categoryData);
+      } else {
+        await supabaseHelpers.createCategory(categoryData);
+      }
+
+      // Refresh category list and reset state
+      await fetchCategories();
+      setIsDialogOpen(false);
+      setEditingCategory(null);
+      resetForm();
+    } catch (error) {
+      console.error("Error saving category:", error);
+      setError("Failed to save category");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleEdit = (category) => {
     setEditingCategory(category)
     setFormData({
       name: category.name,
       description: category.description || "",
-      image: category.image || "",
-      sortOrder: category.sortOrder || 0,
+      sort_order: category.sort_order || 0,
+      image: category.image ? { url: category.image } : null
     })
     setIsDialogOpen(true)
   }
@@ -123,17 +193,23 @@ export default function AdminCategories() {
   }
 
   const resetForm = () => {
+    // Clean up any object URLs
+    if (formData.image?.url && !formData.image.url.startsWith("http")) {
+      URL.revokeObjectURL(formData.image.url)
+    }
+
     setEditingCategory(null)
-    setFormData({ name: "", description: "", image: "", sortOrder: 0 })
+    setFormData({
+      name: "",
+      description: "",
+      sort_order: 0,
+      image: null
+    })
     setError("")
   }
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
-  }
-
-  if (!user || user.role !== "admin") {
-    return <div className="flex items-center justify-center min-h-screen">Access denied</div>
   }
 
   return (
@@ -153,7 +229,7 @@ export default function AdminCategories() {
             }}
           >
             <DialogTrigger asChild>
-              <Button className="bg-orange-600 hover:bg-orange-700">
+              <Button className="bg-[#b88a44] hover:bg-orange-700">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Category
               </Button>
@@ -172,6 +248,7 @@ export default function AdminCategories() {
                     required
                   />
                 </div>
+
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea
@@ -181,32 +258,59 @@ export default function AdminCategories() {
                     rows={3}
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="image">Image URL</Label>
+                  <Label htmlFor="image">Category Image</Label>
                   <Input
                     id="image"
-                    type="url"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
                   />
+
+                  {/* Image Preview */}
+                  {formData.image && (
+                    <div className="mt-3 relative w-32 h-32 border rounded overflow-hidden">
+                      <img
+                        src={formData.image.url}
+                        alt="Category preview"
+                        className="object-cover w-full h-full"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
+
                 <div>
-                  <Label htmlFor="sortOrder">Sort Order</Label>
+                  <Label htmlFor="sort_order">Sort Order</Label>
                   <Input
-                    id="sortOrder"
+                    id="sort_order"
                     type="number"
-                    value={formData.sortOrder}
-                    onChange={(e) => setFormData({ ...formData, sortOrder: Number.parseInt(e.target.value) || 0 })}
+                    value={formData.sort_order}
+                    onChange={(e) => setFormData({ ...formData, sort_order: Number.parseInt(e.target.value) || 0 })}
                   />
                 </div>
+
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
+
                 <div className="flex gap-2">
-                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-                    {editingCategory ? "Update" : "Create"} Category
+                  <Button
+                    type="submit"
+                    className="bg-[#b88a44] hover:bg-orange-700"
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : editingCategory ? "Update" : "Create"} Category
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
@@ -245,6 +349,15 @@ export default function AdminCategories() {
               <div className="space-y-4">
                 {categories.map((category) => (
                   <div key={category._id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    {/* Category Image */}
+                    {category.image && (
+                      <img
+                        src={category.image}
+                        alt={category.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    )}
+
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{category.name}</h3>
                       <p className="text-sm text-gray-600">{category.description}</p>
@@ -252,7 +365,7 @@ export default function AdminCategories() {
                         <Badge variant={category.isActive ? "default" : "secondary"}>
                           {category.isActive ? "Active" : "Inactive"}
                         </Badge>
-                        <span className="text-sm text-gray-500">Sort: {category.sortOrder}</span>
+                        <span className="text-sm text-gray-500">Sort: {category.sort_order}</span>
                       </div>
                     </div>
 
@@ -275,7 +388,7 @@ export default function AdminCategories() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-500">No categories found</p>
-                <Button onClick={() => setIsDialogOpen(true)} className="mt-4">
+                <Button onClick={() => setIsDialogOpen(true)} className="mt-4 bg-[#b88a44] hover:bg-orange-700">
                   Add your first category
                 </Button>
               </div>

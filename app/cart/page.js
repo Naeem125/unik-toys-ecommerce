@@ -38,7 +38,7 @@ export default function CartPage() {
             <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-6" />
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Your Cart is Empty</h1>
             <p className="text-gray-600 mb-8">Looks like you haven't added any toys to your cart yet.</p>
-            <Button asChild size="lg" className="bg-orange-600 hover:bg-orange-700">
+            <Button asChild size="lg" className="bg-[#b88a44] hover:bg-orange-700">
               <Link href="/shop">Start Shopping</Link>
             </Button>
           </div>
@@ -76,7 +76,7 @@ export default function CartPage() {
 
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <p className="text-orange-600 font-bold">${item.price}</p>
+                      <p className="text-[#b88a44] font-bold">${item.price}</p>
                       {item.stock < 10 && <p className="text-red-600 text-sm">Only {item.stock} left in stock</p>}
                     </div>
 
@@ -139,7 +139,7 @@ export default function CartPage() {
                   <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
                 </div>
                 {cartTotal < 50 && (
-                  <p className="text-sm text-orange-600">Add ${(50 - cartTotal).toFixed(2)} more for free shipping!</p>
+                  <p className="text-sm text-[#b88a44]">Add ${(50 - cartTotal).toFixed(2)} more for free shipping!</p>
                 )}
                 <div className="flex justify-between">
                   <span>Tax:</span>
@@ -154,17 +154,17 @@ export default function CartPage() {
 
                 <div className="space-y-3 pt-4">
                   {user ? (
-                    <Button asChild className="w-full bg-orange-600 hover:bg-orange-700" size="lg">
+                    <Button asChild className="w-full bg-[#b88a44] hover:bg-orange-700" size="lg">
                       <Link href="/checkout">Proceed to Checkout</Link>
                     </Button>
                   ) : (
                     <div className="space-y-2">
-                      <Button asChild className="w-full bg-orange-600 hover:bg-orange-700" size="lg">
+                      <Button asChild className="w-full bg-[#b88a44] hover:bg-orange-700" size="lg">
                         <Link href="/login?redirect=/checkout">Login to Checkout</Link>
                       </Button>
                       <p className="text-sm text-center text-gray-600">
                         New customer?{" "}
-                        <Link href="/register" className="text-orange-600 hover:underline">
+                        <Link href="/register" className="text-[#b88a44] hover:underline">
                           Create an account
                         </Link>
                       </p>

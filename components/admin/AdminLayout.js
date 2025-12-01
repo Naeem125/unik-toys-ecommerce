@@ -34,7 +34,7 @@ export default function AdminLayout({ children }) {
         <SheetContent side="left" className="w-64 p-0">
           <div className="flex flex-col h-full">
             <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-orange-600">Admin Panel</h2>
+              <h2 className="text-xl font-bold text-[#b88a44]">Admin Panel</h2>
             </div>
             <nav className="flex-1 p-4">
               <ul className="space-y-2">
@@ -82,7 +82,7 @@ export default function AdminLayout({ children }) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-orange-600">Admin Panel</h2>
+            <h2 className="text-xl font-bold text-[#b88a44]">Admin Panel</h2>
             <p className="text-sm text-gray-600 mt-1">Welcome, {user?.name}</p>
           </div>
           <nav className="flex-1 p-4">
@@ -140,7 +140,7 @@ export default function AdminLayout({ children }) {
                 <SheetContent side="left" className="w-64 p-0">
                   <div className="flex flex-col h-full">
                     <div className="p-6 border-b">
-                      <h2 className="text-xl font-bold text-orange-600">Admin Panel</h2>
+                      <h2 className="text-xl font-bold text-[#b88a44]">Admin Panel</h2>
                     </div>
                     <nav className="flex-1 p-4">
                       <ul className="space-y-2">

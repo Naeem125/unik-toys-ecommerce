@@ -80,15 +80,15 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-orange-500" />
+                <Phone className="h-4 w-4 text-[#b88a44]" />
                 <span className="text-gray-300">+1 (555) 123-4567</span>
               </div>
               <div className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-orange-500" />
+                <Mail className="h-4 w-4 text-[#b88a44]" />
                 <span className="text-gray-300">info@uniquetoys.com</span>
               </div>
               <div className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-orange-500" />
+                <MapPin className="h-4 w-4 text-[#b88a44]" />
                 <span className="text-gray-300">123 Toy Street, Fun City, FC 12345</span>
               </div>
             </div>

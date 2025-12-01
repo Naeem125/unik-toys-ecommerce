@@ -185,7 +185,7 @@ export default function ContactPage() {
                     </Alert>
                   )}
 
-                  <Button type="submit" disabled={isLoading} className="w-full bg-orange-600 hover:bg-orange-700">
+                  <Button type="submit" disabled={isLoading} className="w-full bg-[#b88a44] hover:bg-[#d4922f]">
                     {isLoading ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
@@ -205,7 +205,7 @@ export default function ContactPage() {
                   return (
                     <div key={index} className="flex items-start gap-4">
                       <div className="bg-orange-100 p-2 rounded-lg flex-shrink-0">
-                        <Icon className="h-5 w-5 text-orange-600" />
+                        <Icon className="h-5 w-5 text-[#b88a44]" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">{info.title}</h3>

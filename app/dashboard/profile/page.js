@@ -107,7 +107,7 @@ export default function UserProfile() {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
           <p className="mt-4">Loading profile...</p>
         </div>
         <Footer />
@@ -258,7 +258,7 @@ export default function UserProfile() {
             )}
 
             <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-orange-600 hover:bg-orange-700">
+              <Button type="submit" disabled={isLoading} className="bg-[#b88a44] hover:bg-orange-700">
                 {isLoading ? "Updating..." : "Update Profile"}
               </Button>
               <Button type="button" variant="outline" asChild>

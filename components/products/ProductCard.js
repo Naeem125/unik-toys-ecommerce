@@ -32,7 +32,7 @@ export default function ProductCard({ product }) {
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            {product.isFeatured && <Badge className="absolute top-2 left-2 bg-orange-600">Featured</Badge>}
+            {product.isFeatured && <Badge className="absolute top-2 left-2 bg-[#b88a44]">Featured</Badge>}
             {discountPercentage > 0 && (
               <Badge variant="destructive" className="absolute top-2 right-2">
                 -{discountPercentage}%
@@ -45,7 +45,7 @@ export default function ProductCard({ product }) {
             )}
           </div>
           <div className="p-4">
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-[#b88a44] transition-colors">
               {product.name}
             </h3>
             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.shortDescription}</p>
@@ -69,7 +69,7 @@ export default function ProductCard({ product }) {
 
             {/* Price */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl font-bold text-orange-600">${product.price}</span>
+              <span className="text-xl font-bold text-[#b88a44]">${product.price}</span>
               {product.comparePrice && (
                 <span className="text-sm text-muted-foreground line-through">${product.comparePrice}</span>
               )}
@@ -88,7 +88,7 @@ export default function ProductCard({ product }) {
         <Button
           onClick={handleAddToCart}
           disabled={product.stock === 0}
-          className="w-full bg-orange-600 hover:bg-orange-700"
+          className="w-full bg-[#b88a44] hover:bg-[#c68d37]"
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
