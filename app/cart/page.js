@@ -58,7 +58,7 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="py-4">
               <CardHeader>
                 <CardTitle>Cart Items ({cart.length})</CardTitle>
               </CardHeader>
@@ -125,7 +125,7 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div>
-            <Card>
+            <Card className="py-4">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>

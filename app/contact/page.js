@@ -59,25 +59,25 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      content: "info@uniquetoys.com",
+      content: "bilalamin4477@gmail.com",
       description: "Send us an email anytime",
     },
     {
       icon: Phone,
       title: "Call Us",
-      content: "+1 (555) 123-4567",
-      description: "Mon-Fri 9AM-6PM EST",
+      content: "+923324719938",
+      // description: "Mon-Fri 9AM-6PM EST",
     },
-    {
-      icon: MapPin,
-      title: "Visit Us",
-      content: "123 Toy Street, Fun City, FC 12345",
-      description: "Our headquarters",
-    },
+    // {
+    //   icon: MapPin,
+    //   title: "Visit Us",
+    //   content: "123 Toy Street, Fun City, FC 12345",
+    //   description: "Our headquarters",
+    // },
     {
       icon: Clock,
       title: "Business Hours",
-      content: "Mon-Fri: 9AM-6PM EST",
+      content: "Mon-Fri: 9AM-6PM PST",
       description: "Weekend support available",
     },
   ]

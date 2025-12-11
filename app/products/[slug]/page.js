@@ -104,17 +104,17 @@ export default function ProductPage({ params }) {
             Shop
           </Link>
           <span>/</span>
-          <Link href={`/shop?category=${product.category.slug}`} className="hover:text-[#b88a44]">
-            {product.category.name}
+          <Link href={`/shop?category=${product.categories.slug}`} className="hover:text-[#b88a44]">
+            {product.categories.name}
           </Link>
           <span>/</span>
           <span className="text-gray-900">{product.name}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Product Images */}
-          <div>
-            <div className="relative aspect-square mb-4 overflow-hidden rounded-lg bg-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          {/* Product Images - Left Section with Background */}
+          <div className="bg-gray-50 p-2 rounded-2xl">
+            <div className="relative aspect-square mb-4 overflow-hidden rounded-xl bg-white shadow-md">
               <Image
                 src={product.images?.[selectedImage]?.url || "/placeholder.svg?height=600&width=600&query=toy"}
                 alt={product.images?.[selectedImage]?.alt || product.name}
@@ -131,14 +131,13 @@ export default function ProductPage({ params }) {
 
             {/* Image Thumbnails */}
             {product.images && product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-3 overflow-x-auto pb-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
-                    className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 ${
-                      selectedImage === index ? "border-[#b88a44]" : "border-gray-200"
-                    }`}
+                    className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 ${selectedImage === index ? "border-[#b88a44] shadow-md scale-105" : "border-gray-200 hover:border-gray-300"
+                      }`}
                   >
                     <Image
                       src={image.url || "/placeholder.svg"}
@@ -152,8 +151,8 @@ export default function ProductPage({ params }) {
             )}
           </div>
 
-          {/* Product Info */}
-          <div>
+          {/* Product Info - Right Section with Background */}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
               <p className="text-gray-600 mb-4">{product.shortDescription}</p>
@@ -165,9 +164,8 @@ export default function ProductPage({ params }) {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`h-5 w-5 ${
-                          i < Math.floor(product.rating.average) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                        }`}
+                        className={`h-5 w-5 ${i < Math.floor(product.rating.average) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                          }`}
                       />
                     ))}
                   </div>
@@ -185,15 +183,6 @@ export default function ProductPage({ params }) {
                 )}
                 {discountPercentage > 0 && <Badge variant="destructive">Save {discountPercentage}%</Badge>}
               </div>
-
-              {/* Age Range */}
-              {product.ageRange && (
-                <div className="mb-4">
-                  <span className="text-sm text-gray-600">
-                    Recommended for ages {product.ageRange.min}-{product.ageRange.max}
-                  </span>
-                </div>
-              )}
 
               {/* Stock Status */}
               <div className="mb-6">
@@ -302,23 +291,24 @@ export default function ProductPage({ params }) {
                   </div>
                 )}
 
-                {product.dimensions && (
+                {/* Specifications - Only show if dimensions or weight exist */}
+                {((product.dimensions?.length || product.dimensions?.width || product.dimensions?.height || product.weight)) && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Specifications</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      {product.dimensions.length && (
+                      {product.dimensions?.length && (
                         <div>
                           <span className="text-gray-600">Length:</span>
                           <span className="ml-2 font-medium">{product.dimensions.length}"</span>
                         </div>
                       )}
-                      {product.dimensions.width && (
+                      {product.dimensions?.width && (
                         <div>
                           <span className="text-gray-600">Width:</span>
                           <span className="ml-2 font-medium">{product.dimensions.width}"</span>
                         </div>
                       )}
-                      {product.dimensions.height && (
+                      {product.dimensions?.height && (
                         <div>
                           <span className="text-gray-600">Height:</span>
                           <span className="ml-2 font-medium">{product.dimensions.height}"</span>
@@ -327,7 +317,7 @@ export default function ProductPage({ params }) {
                       {product.weight && (
                         <div>
                           <span className="text-gray-600">Weight:</span>
-                          <span className="ml-2 font-medium">{product.weight} lbs</span>
+                          <span className="ml-2 font-medium">{product.weight} {product.weight_unit || 'kg'}</span>
                         </div>
                       )}
                     </div>

@@ -180,7 +180,7 @@ export default function UserProfile() {
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="+1 (555) 123-4567"
+                    placeholder="+923124712934"
                   />
                 </div>
               </CardContent>

@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useAuth } from "@/contexts/AuthContext"
-import { LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, Settings, Menu, LogOut, Home } from "lucide-react"
+import { LayoutDashboard, Package, FolderOpen, ShoppingCart, Users, Settings, Menu, LogOut, Home, ShieldAlert } from "lucide-react"
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -19,8 +19,67 @@ const navigation = [
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
   const pathname = usePathname()
-  const { user, logout } = useAuth()
+  const router = useRouter()
+  const { user, loading, logout } = useAuth()
+
+  // Check authentication and authorization
+  useEffect(() => {
+    if (!loading) {
+      // Not authenticated - redirect to login
+      if (!user) {
+        router.push("/login")
+        return
+      }
+
+      // Authenticated but not admin - show access denied
+      if (user.role !== "admin") {
+        setIsAuthorized(false)
+        // Redirect to home after showing message
+        setTimeout(() => {
+          router.push("/")
+        }, 2000)
+        return
+      }
+
+      // User is authenticated and is admin
+      setIsAuthorized(true)
+    }
+  }, [user, loading, router])
+
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show access denied for non-admin users
+  if (!loading && user && user.role !== "admin") {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center max-w-md p-8">
+          <ShieldAlert className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-4">
+            You don't have permission to access the admin panel. Only administrators can access this area.
+          </p>
+          <p className="text-sm text-gray-500">Redirecting to home page...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render admin layout if not authorized
+  if (!isAuthorized) {
+    return null
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -45,9 +104,8 @@ export default function AdminLayout({ children }) {
                     <li key={item.name}>
                       <Link
                         href={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
-                        }`}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
+                          }`}
                         onClick={() => setSidebarOpen(false)}
                       >
                         <Icon className="h-5 w-5" />
@@ -94,9 +152,8 @@ export default function AdminLayout({ children }) {
                   <li key={item.name}>
                     <Link
                       href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                        isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
+                        }`}
                     >
                       <Icon className="h-5 w-5" />
                       {item.name}
@@ -151,9 +208,8 @@ export default function AdminLayout({ children }) {
                             <li key={item.name}>
                               <Link
                                 href={item.href}
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                                  isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
-                                }`}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive ? "bg-orange-100 text-orange-700" : "text-gray-700 hover:bg-gray-100"
+                                  }`}
                               >
                                 <Icon className="h-5 w-5" />
                                 {item.name}

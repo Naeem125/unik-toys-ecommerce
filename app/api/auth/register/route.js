@@ -11,7 +11,7 @@ async function createUser(userData) {
     email_confirm: true, // Auto-confirm email
     user_metadata: {
       name: userData.name,
-        display_name: userData.name,
+      display_name: userData.name,
       role: role
     },
   })

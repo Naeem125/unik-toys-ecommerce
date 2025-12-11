@@ -33,8 +33,8 @@ export default function AdminProducts() {
     stock: "",
     sku: "",
     weight: "",
+    weight_unit: "kg",
     dimensions: { length: "", width: "", height: "" },
-    age_range: { min: "", max: "" },
     tags: "",
     is_featured: false,
     images: []
@@ -160,14 +160,11 @@ export default function AdminProducts() {
         compare_price: formData.compare_price ? parseFloat(formData.compare_price) : null,
         stock: parseInt(formData.stock),
         weight: formData.weight ? parseFloat(formData.weight) : null,
+        weight_unit: formData.weight ? formData.weight_unit : null,
         dimensions: {
           length: parseFloat(formData.dimensions.length) || null,
           width: parseFloat(formData.dimensions.width) || null,
           height: parseFloat(formData.dimensions.height) || null
-        },
-        age_range: {
-          min: parseInt(formData.age_range.min) || null,
-          max: parseInt(formData.age_range.max) || null
         },
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         images: uploadedImages
@@ -204,8 +201,8 @@ export default function AdminProducts() {
       stock: product.stock || "",
       sku: product.sku || "",
       weight: product.weight || "",
+      weight_unit: product.weight_unit || "kg",
       dimensions: product.dimensions || { length: "", width: "", height: "" },
-      age_range: product.age_range || { min: "", max: "" },
       tags: product.tags ? product.tags.join(', ') : "",
       is_featured: product.is_featured || false,
       images
@@ -237,8 +234,8 @@ export default function AdminProducts() {
       stock: "",
       sku: "",
       weight: "",
+      weight_unit: "kg",
       dimensions: { length: "", width: "", height: "" },
-      age_range: { min: "", max: "" },
       tags: "",
       is_featured: false,
       images: []
@@ -388,6 +385,77 @@ export default function AdminProducts() {
                     onChange={handleInputChange}
                     placeholder="tag1, tag2, tag3"
                   />
+                </div>
+
+                {/* Dimensions */}
+                <div>
+                  <Label className="mb-2 block">Dimensions (inches, optional)</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="dim_length" className="text-sm text-gray-600">Length</Label>
+                      <Input
+                        id="dim_length"
+                        type="number"
+                        step="0.1"
+                        value={formData.dimensions.length}
+                        onChange={(e) => handleObjectInputChange('dimensions', 'length', e.target.value)}
+                        placeholder="12.5"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dim_width" className="text-sm text-gray-600">Width</Label>
+                      <Input
+                        id="dim_width"
+                        type="number"
+                        step="0.1"
+                        value={formData.dimensions.width}
+                        onChange={(e) => handleObjectInputChange('dimensions', 'width', e.target.value)}
+                        placeholder="8.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dim_height" className="text-sm text-gray-600">Height</Label>
+                      <Input
+                        id="dim_height"
+                        type="number"
+                        step="0.1"
+                        value={formData.dimensions.height}
+                        onChange={(e) => handleObjectInputChange('dimensions', 'height', e.target.value)}
+                        placeholder="6.5"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Weight */}
+                <div>
+                  <Label className="mb-2 block">Weight (optional)</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Input
+                        id="weight"
+                        name="weight"
+                        type="number"
+                        step="0.01"
+                        value={formData.weight}
+                        onChange={handleInputChange}
+                        placeholder="2.5"
+                      />
+                    </div>
+                    <div>
+                      <Select value={formData.weight_unit} onValueChange={(value) => setFormData(prev => ({ ...prev, weight_unit: value }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                          <SelectItem value="g">Grams (g)</SelectItem>
+                          <SelectItem value="lb">Pounds (lb)</SelectItem>
+                          <SelectItem value="oz">Ounces (oz)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">

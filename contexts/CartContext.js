@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useMemo } from "react"
 import {
   getCartFromStorage,
   addToCart as addToCartUtil,
@@ -46,8 +46,9 @@ export function CartProvider({ children }) {
     return updatedCart
   }
 
-  const cartTotal = getCartTotal(cart)
-  const cartItemCount = getCartItemCount(cart)
+  // Memoize cart calculations to ensure they update when cart changes
+  const cartTotal = useMemo(() => getCartTotal(cart), [cart])
+  const cartItemCount = useMemo(() => getCartItemCount(cart), [cart])
 
   const value = {
     cart,

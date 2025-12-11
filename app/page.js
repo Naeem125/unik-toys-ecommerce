@@ -24,9 +24,8 @@ export default function HomePage() {
     try {
       const [categoriesData, productsData] = await Promise.all([
         supabaseHelpers.getCategories(),
-        supabaseHelpers.getProducts({featured:true})
+        supabaseHelpers.getProducts({ featured: true })
       ])
-    
 
       setFeaturedProducts(productsData)
       setCategories(categoriesData)
@@ -42,7 +41,7 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Section */}
-          <section className="py-20" style={{ backgroundColor: '#FFFDF5' }}>
+      <section className="py-20" style={{ backgroundColor: '#FFFDF5' }}>
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -59,7 +58,7 @@ export default function HomePage() {
                     Shop Now <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="transition-all duration-200" style={{ 
+                <Button asChild variant="outline" size="lg" className="transition-all duration-200" style={{
                   backgroundColor: '#f0e9d8',
                   borderColor: '#b88a49',
                   color: '#b88a49'
@@ -82,8 +81,8 @@ export default function HomePage() {
         </div>
       </section>
 
-          {/* Features Section */}
-          <section className="py-16 bg-white">
+      {/* Features Section */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200">
@@ -111,8 +110,46 @@ export default function HomePage() {
         </div>
       </section>
 
-          {/* Categories Section */}
-          <section className="py-16" style={{ backgroundColor: '#FFFDF5' }}>
+      {/* Featured Products Section */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
+            <p className="text-xl text-gray-700">Our most popular toys loved by kids and parents</p>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gradient-to-br from-amber-200 to-yellow-200 aspect-square rounded-lg mb-4"></div>
+                  <div className="bg-gradient-to-r from-amber-200 to-yellow-200 h-4 rounded mb-2"></div>
+                  <div className="bg-gradient-to-r from-amber-200 to-yellow-200 h-4 rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+          <div className="text-center mt-12">
+            <Button asChild size="lg" variant="outline" className="transition-all duration-200" style={{
+              backgroundColor: '#f0e9d8',
+              borderColor: '#b88a49',
+              color: '#b88a49'
+            }}>
+              <Link href="/shop">
+                View All Products <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-16" style={{ backgroundColor: '#FFFDF5' }}>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Shop by Category</h2>
@@ -142,44 +179,6 @@ export default function HomePage() {
         </div>
       </section>
 
-          {/* Featured Products Section */}
-          <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
-            <p className="text-xl text-gray-700">Our most popular toys loved by kids and parents</p>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gradient-to-br from-amber-200 to-yellow-200 aspect-square rounded-lg mb-4"></div>
-                  <div className="bg-gradient-to-r from-amber-200 to-yellow-200 h-4 rounded mb-2"></div>
-                  <div className="bg-gradient-to-r from-amber-200 to-yellow-200 h-4 rounded w-3/4"></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
-          <div className="text-center mt-12">
-            <Button asChild size="lg" variant="outline" className="transition-all duration-200" style={{ 
-              backgroundColor: '#f0e9d8',
-              borderColor: '#b88a49',
-              color: '#b88a49'
-            }}>
-              <Link href="/shop">
-                View All Products <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Newsletter Section */}
       <section className="py-16 text-white" style={{ background: 'linear-gradient(to right, #b88a49, #d4a574, #b88a49)' }}>
         <div className="container mx-auto px-4 text-center">
@@ -187,7 +186,7 @@ export default function HomePage() {
           <p className="text-xl mb-8">Get the latest news about new arrivals and special offers</p>
           <div className="max-w-md mx-auto flex gap-4">
             <input type="email" placeholder="Enter your email" className="flex-1 px-4 py-3 rounded-lg text-gray-900 shadow-lg focus:outline-none focus:ring-2 focus:ring-white/50" />
-            <Button variant="secondary" className="shadow-lg font-semibold" style={{ 
+            <Button variant="secondary" className="shadow-lg font-semibold" style={{
               backgroundColor: '#f0e9d8',
               color: '#b88a49'
             }}>

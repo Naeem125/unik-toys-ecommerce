@@ -40,7 +40,7 @@ export default function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-xl border-2 border-gray-200">
+    <Card className="w-full max-w-md mx-auto shadow-xl border-2 border-gray-200 py-4">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold" style={{ color: '#b88a49' }}>Welcome Back</CardTitle>
         <CardDescription>Sign in to your Unik Toys account</CardDescription>
@@ -77,9 +77,9 @@ export default function LoginForm() {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200" 
+          <Button
+            type="submit"
+            className="w-full text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
             style={{ backgroundColor: '#b88a49' }}
             disabled={loading}
           >
