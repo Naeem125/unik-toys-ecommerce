@@ -10,6 +10,7 @@ import Footer from "@/components/layout/Footer"
 import ProductCard from "@/components/products/ProductCard"
 import { ArrowRight, Shield, Truck, HeartHandshake } from "lucide-react"
 import { supabaseHelpers } from "@/lib/supabase"
+import { formatPrice } from "@/lib/utils"
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState([])
@@ -50,7 +51,7 @@ export default function HomePage() {
               </h1>
               <p className="text-xl text-gray-700 mb-8 text-pretty">
                 From educational toys to action figures, we have everything to spark your child's imagination.
-                Guaranteed lowest prices with free shipping on orders over $50!
+                Guaranteed lowest prices with free shipping on orders over {formatPrice(50)}!
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="text-white shadow-lg " style={{ backgroundColor: '#b88a49' }}>
@@ -97,7 +98,7 @@ export default function HomePage() {
                 <Truck className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Free Shipping</h3>
-              <p className="text-gray-600">Free shipping on all orders over $50. Fast and reliable delivery.</p>
+              <p className="text-gray-600">Free shipping on all orders over {formatPrice(50)}. Fast and reliable delivery.</p>
             </div>
             <div className="text-center bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200">
               <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg" style={{ backgroundColor: '#b88a49' }}>

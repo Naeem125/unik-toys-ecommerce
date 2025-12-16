@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingCart, Star } from "lucide-react"
 import { useCart } from "@/contexts/CartContext"
+import { formatPrice } from "@/lib/utils"
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart()
@@ -68,9 +69,9 @@ export default function ProductCard({ product }) {
 
             {/* Price */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl font-bold text-[#b88a44]">${product.price}</span>
+              <span className="text-xl font-bold text-[#b88a44]">{formatPrice(product.price)}</span>
               {product.comparePrice && (
-                <span className="text-sm text-muted-foreground line-through">${product.comparePrice}</span>
+                <span className="text-sm text-muted-foreground line-through">{formatPrice(product.comparePrice)}</span>
               )}
             </div>
 

@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, cartTotal } = useCart()
@@ -76,7 +77,7 @@ export default function CartPage() {
 
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{item.name}</h3>
-                      <p className="text-[#b88a44] font-bold">${item.price}</p>
+                      <p className="text-[#b88a44] font-bold">{formatPrice(item.price)}</p>
                       {item.stock < 10 && <p className="text-red-600 text-sm">Only {item.stock} left in stock</p>}
                     </div>
 
@@ -107,7 +108,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="text-right">
-                      <p className="font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -132,23 +133,23 @@ export default function CartPage() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${cartTotal.toFixed(2)}</span>
+                  <span>{formatPrice(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping:</span>
-                  <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
+                  <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                 </div>
                 {cartTotal < 50 && (
-                  <p className="text-sm text-[#b88a44]">Add ${(50 - cartTotal).toFixed(2)} more for free shipping!</p>
+                  <p className="text-sm text-[#b88a44]">Add {formatPrice(50 - cartTotal)} more for free shipping!</p>
                 )}
                 <div className="flex justify-between">
                   <span>Tax:</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>{formatPrice(tax)}</span>
                 </div>
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(total)}</span>
                   </div>
                 </div>
 

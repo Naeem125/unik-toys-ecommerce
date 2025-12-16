@@ -1,9 +1,9 @@
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase admin client
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
@@ -13,7 +13,12 @@ async function seedSuperAdmin() {
   const name = process.env.SUPERADMIN_NAME || "Super Admin";
 
   if (!email || !password) {
-    console.error("❌ SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD must be defined in .env");
+    console.error("❌ SUPERADMIN_EMAIL and SUPERADMIN_PASSWORD must be defined in .env.local");
+    process.exit(1);
+  }
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("❌ NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be defined in .env.local");
     process.exit(1);
   }
 
@@ -25,8 +30,7 @@ async function seedSuperAdmin() {
     email_confirm: true, // Skip email confirmation step
     user_metadata: {
       name,
-      display_name: name,
-      role: "superadmin"
+      role: "superadmin" // Single superadmin who can create admins and users
     }
   });
 
@@ -36,6 +40,10 @@ async function seedSuperAdmin() {
   }
 
   console.log("✅ Super admin created successfully:", data.user.email);
+  console.log("📧 Email:", data.user.email);
+  console.log("👤 Name:", name);
+  console.log("🔑 Role: superadmin");
+  console.log("\n⚠️  This is the ONLY superadmin account. Protect these credentials!");
   process.exit(0);
 }
 

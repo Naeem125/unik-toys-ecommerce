@@ -104,11 +104,11 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="flex flex-col min-h-screen bg-gray-50 w-full">
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="flex-1 container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
-          <p className="mt-4">Loading profile...</p>
+          <p className="mt-4 text-gray-600">Loading profile...</p>
         </div>
         <Footer />
       </div>
@@ -120,47 +120,53 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-gray-50 w-full">
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
-            <p className="text-gray-600">Manage your account information</p>
+      <div className="flex-1 container mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
+              <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
+            </div>
+            <Button variant="outline" asChild className="hidden sm:flex">
+              <Link href="/dashboard">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
           </div>
-        </div>
 
-        <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="border-none shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-orange-50 to-white border-b border-orange-100 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-orange-100 p-2 rounded-full">
+                    <User className="h-6 w-6 text-[#b88a44]" />
+                  </div>
                   <div>
-                    <Label htmlFor="name">Full Name *</Label>
+                    <h2 className="text-lg font-semibold text-gray-900">Personal Information</h2>
+                    <p className="text-sm text-gray-500">Update your personal details</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       required
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="email">Email Address *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -168,85 +174,96 @@ export default function UserProfile() {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
                       disabled
-                      className="bg-gray-50"
+                      className="bg-gray-100 text-gray-500 cursor-not-allowed"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                    <p className="text-xs text-gray-400">Email cannot be changed</p>
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    placeholder="+923124712934"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      placeholder="+1 (555) 000-0000"
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Address Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Default Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+            <Card className="border-none shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-full">
+                    <MapPin className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Shipping Address</h2>
+                    <p className="text-sm text-gray-500">Your default delivery address</p>
+                  </div>
+                </div>
+              </div>
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-2">
                   <Label htmlFor="street">Street Address</Label>
                   <Input
                     id="street"
                     value={formData.address.street}
                     onChange={(e) => handleInputChange("address.street", e.target.value)}
                     placeholder="123 Main Street"
+                    className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
                       value={formData.address.city}
                       onChange={(e) => handleInputChange("address.city", e.target.value)}
                       placeholder="New York"
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="state">State</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State / Province</Label>
                     <Input
                       id="state"
                       value={formData.address.state}
                       onChange={(e) => handleInputChange("address.state", e.target.value)}
                       placeholder="NY"
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="zipCode">ZIP Code</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="zipCode">ZIP / Postal Code</Label>
                     <Input
                       id="zipCode"
                       value={formData.address.zipCode}
                       onChange={(e) => handleInputChange("address.zipCode", e.target.value)}
                       placeholder="10001"
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
                     />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={formData.address.country}
-                    onChange={(e) => handleInputChange("address.country", e.target.value)}
-                    placeholder="United States"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={formData.address.country}
+                      onChange={(e) => handleInputChange("address.country", e.target.value)}
+                      placeholder="United States"
+                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {message && (
-              <Alert>
+              <Alert className="bg-green-50 border-green-200 text-green-800">
                 <AlertDescription>{message}</AlertDescription>
               </Alert>
             )}
@@ -257,12 +274,23 @@ export default function UserProfile() {
               </Alert>
             )}
 
-            <div className="flex gap-4">
-              <Button type="submit" disabled={isLoading} className="bg-[#b88a44] hover:bg-orange-700">
-                {isLoading ? "Updating..." : "Update Profile"}
-              </Button>
-              <Button type="button" variant="outline" asChild>
+            <div className="flex items-center justify-end gap-4 pt-4">
+              <Button type="button" variant="ghost" asChild>
                 <Link href="/dashboard">Cancel</Link>
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-[#b88a44] hover:bg-orange-700 min-w-[150px]"
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </div>
+                ) : (
+                  "Save Changes"
+                )}
               </Button>
             </div>
           </form>

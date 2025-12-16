@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, ChevronUp, Search, HelpCircle } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function FAQPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -34,7 +35,7 @@ export default function FAQPage() {
         {
           question: "Do you offer payment plans?",
           answer:
-            "Currently, we don't offer payment plans, but we do accept PayPal Pay in 4 for eligible purchases over $30.",
+            `Currently, we don't offer payment plans, but we do accept PayPal Pay in 4 for eligible purchases over ${formatPrice(30)}.`,
         },
       ],
     },
@@ -44,7 +45,7 @@ export default function FAQPage() {
         {
           question: "How much does shipping cost?",
           answer:
-            "We offer free shipping on all orders over $50. For orders under $50, standard shipping is $9.99. Express shipping options are available at checkout.",
+            `We offer free shipping on all orders over ${formatPrice(50)}. For orders under ${formatPrice(50)}, standard shipping is ${formatPrice(9.99)}. Express shipping options are available at checkout.`,
         },
         {
           question: "How long does delivery take?",
@@ -150,11 +151,11 @@ export default function FAQPage() {
 
   const filteredFaqs = searchQuery
     ? allFaqs.filter(
-        (faq) =>
-          faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          faq.category.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      (faq) =>
+        faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        faq.category.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
     : allFaqs
 
   const toggleItem = (id) => {

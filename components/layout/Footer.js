@@ -85,18 +85,18 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-4 w-4 text-[#b88a44]" />
-                <span className="text-gray-300">bilalamin4477@gmail.com</span>
+                <span className="text-gray-300">bilalamin1226@gmail.com</span>
               </div>
               <div className="flex items-center gap-3">
                 <MapPin className="h-4 w-4 text-[#b88a44]" />
-                <span className="text-gray-300">123 Toy Street, Fun City, FC 12345</span>
+                <span className="text-gray-300">Online</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Unique Toys. All rights reserved. | Privacy Policy | Terms of Service</p>
+          <p>&copy; {new Date().getFullYear()} Unique Toys. All rights reserved. | Privacy Policy | Terms of Service</p>
         </div>
       </div>
     </footer>

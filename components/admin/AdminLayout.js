@@ -33,8 +33,9 @@ export default function AdminLayout({ children }) {
         return
       }
 
-      // Authenticated but not admin - show access denied
-      if (user.role !== "admin") {
+      // Authenticated but not admin or superadmin - show access denied
+      const userRole = user.role
+      if (userRole !== "admin" && userRole !== "superadmin") {
         setIsAuthorized(false)
         // Redirect to home after showing message
         setTimeout(() => {
@@ -43,7 +44,7 @@ export default function AdminLayout({ children }) {
         return
       }
 
-      // User is authenticated and is admin
+      // User is authenticated and is admin or superadmin
       setIsAuthorized(true)
     }
   }, [user, loading, router])
@@ -61,7 +62,8 @@ export default function AdminLayout({ children }) {
   }
 
   // Show access denied for non-admin users
-  if (!loading && user && user.role !== "admin") {
+  const userRole = user?.role
+  if (!loading && user && userRole !== "admin" && userRole !== "superadmin") {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center max-w-md p-8">

@@ -1,80 +1,61 @@
-// import { NextResponse } from "next/server"
-// import connectDB from "@/lib/mongodb"
-// import Order from "@/models/Order"
-// import Product from "@/models/Product"
-// import { requireAuth } from "@/lib/auth"
+import { NextResponse } from "next/server"
+import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { requireAuth } from "@/lib/auth"
 
-// export const POST = requireAuth(async (request, { user }) => {
-//   try {
-//     const { items, shippingAddress, paymentInfo } = await request.json()
+export const POST = requireAuth(async (request, { user }) => {
+    try {
+        const { items, shippingAddress, paymentInfo, subtotal, shippingCost, tax, total } = await request.json()
 
-//     await connectDB()
+        // Generate order number
+        const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-//     // Validate items and calculate total
-//     let subtotal = 0
-//     const orderItems = []
+        // Create order using admin client to bypass RLS
+        const { data: order, error } = await supabaseAdmin
+            .from("orders")
+            .insert({
+                order_number: orderNumber,
+                user_id: user.id,
+                items: items,
+                shipping_address: shippingAddress,
+                payment_info: paymentInfo,
+                subtotal: subtotal,
+                shipping_cost: shippingCost,
+                tax: tax,
+                total: total,
+                status: "pending",
+            })
+            .select()
+            .single()
 
-//     for (const item of items) {
-//       const product = await Product.findById(item.id)
-//       if (!product || !product.isActive) {
-//         return NextResponse.json({ error: `Product ${item.name} not found` }, { status: 400 })
-//       }
+        if (error) {
+            console.error("Error creating order:", error)
+            return NextResponse.json({ error: error.message || "Failed to create order" }, { status: 500 })
+        }
 
-//       if (product.stock < item.quantity) {
-//         return NextResponse.json({ error: `Insufficient stock for ${product.name}` }, { status: 400 })
-//       }
+        return NextResponse.json({ order }, { status: 201 })
+    } catch (error) {
+        console.error("Order creation error:", error)
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    }
+})
 
-//       const itemTotal = product.price * item.quantity
-//       subtotal += itemTotal
+export const GET = requireAuth(async (request, { user }) => {
+    try {
+        // Get user's orders using admin client
+        const { data: orders, error } = await supabaseAdmin
+            .from("orders")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
 
-//       orderItems.push({
-//         product: product._id,
-//         name: product.name,
-//         price: product.price,
-//         quantity: item.quantity,
-//         image: product.images?.[0]?.url || "",
-//       })
+        if (error) {
+            console.error("Error fetching orders:", error)
+            return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 })
+        }
 
-//       // Update product stock
-//       product.stock -= item.quantity
-//       await product.save()
-//     }
-
-//     // Calculate shipping and tax
-//     const shippingCost = subtotal >= 50 ? 0 : 9.99
-//     const tax = subtotal * 0.08 // 8% tax
-//     const total = subtotal + shippingCost + tax
-
-//     // Create order
-//     const order = new Order({
-//       user: user.id,
-//       items: orderItems,
-//       shippingAddress,
-//       paymentInfo,
-//       subtotal,
-//       shippingCost,
-//       tax,
-//       total,
-//     })
-
-//     await order.save()
-
-//     return NextResponse.json({ order }, { status: 201 })
-//   } catch (error) {
-//     console.error("Create order error:", error)
-//     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-//   }
-// })
-
-// export const GET = requireAuth(async (request, { user }) => {
-//   try {
-//     await connectDB()
-
-//     const orders = await Order.find({ user: user.id }).sort({ createdAt: -1 }).populate("items.product", "name slug")
-
-//     return NextResponse.json({ orders })
-//   } catch (error) {
-//     console.error("Get orders error:", error)
-//     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-//   }
-// })
+        return NextResponse.json({ orders }, { status: 200 })
+    } catch (error) {
+        console.error("Error fetching orders:", error)
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    }
+})

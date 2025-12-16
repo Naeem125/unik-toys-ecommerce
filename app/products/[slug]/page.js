@@ -12,6 +12,7 @@ import Footer from "@/components/layout/Footer"
 import ProductCard from "@/components/products/ProductCard"
 import { useCart } from "@/contexts/CartContext"
 import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function ProductPage({ params }) {
   const router = useRouter()
@@ -177,9 +178,9 @@ export default function ProductPage({ params }) {
 
               {/* Price */}
               <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl font-bold text-[#b88a44]">${product.price}</span>
+                <span className="text-3xl font-bold text-[#b88a44]">{formatPrice(product.price)}</span>
                 {product.comparePrice && (
-                  <span className="text-xl text-gray-500 line-through">${product.comparePrice}</span>
+                  <span className="text-xl text-gray-500 line-through">{formatPrice(product.comparePrice)}</span>
                 )}
                 {discountPercentage > 0 && <Badge variant="destructive">Save {discountPercentage}%</Badge>}
               </div>
@@ -249,7 +250,7 @@ export default function ProductPage({ params }) {
                 <Truck className="h-5 w-5 text-[#b88a44]" />
                 <div>
                   <p className="font-medium text-sm">Free Shipping</p>
-                  <p className="text-xs text-gray-600">On orders over $50</p>
+                  <p className="text-xs text-gray-600">On orders over {formatPrice(50)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">

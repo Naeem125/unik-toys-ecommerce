@@ -40,20 +40,20 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: "Sarah Johnson",
+      name: "Bilal Amin",
       role: "Founder & CEO",
-      description: "A mother of three with 15 years of experience in child development and toy safety.",
+      description: "Leads company vision, strategy, and overall growth.",
     },
     {
-      name: "Mike Chen",
+      name: "Naeem Amin",
       role: "Head of Product",
-      description: "Former toy designer with expertise in educational and developmental toys.",
-    },
-    {
-      name: "Lisa Rodriguez",
-      role: "Customer Experience",
-      description: "Dedicated to ensuring every family has an amazing experience with Unique Toys.",
-    },
+      description: "Oversees product direction, development, and user experience.",
+    }
+    // {
+    //   name: "Lisa Rodriguez",
+    //   role: "Customer Experience",
+    //   description: "Dedicated to ensuring every family has an amazing experience with Unique Toys.",
+    // },
   ]
 
   return (
@@ -78,9 +78,9 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-600">
                 <p>
-                  Unique Toys was founded in 2020 by Sarah Johnson, a mother who struggled to find high-quality,
-                  educational toys at affordable prices. After countless hours researching and testing toys for her own
-                  children, she realized there was a gap in the market for a store that truly prioritized both quality
+                  Unique Toys was founded in 2025 by Bilal Amin and Naeem Amin, who struggled to find high-quality,
+                  educational toys at affordable prices. After countless hours researching and testing toys for their own
+                  children, they realized there was a gap in the market for a store that truly prioritized both quality
                   and value.
                 </p>
                 <p>
@@ -96,7 +96,7 @@ export default function AboutPage() {
             </div>
             <div className="relative">
               <img
-                src="/happy-family-playing-with-toys.jpg"
+                src="/happy-family-playing-with-toys.png"
                 alt="Happy family playing with toys"
                 className="rounded-lg shadow-lg w-full"
               />
@@ -134,9 +134,9 @@ export default function AboutPage() {
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
             <p className="text-xl text-gray-600">The people behind Unique Toys</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {team.map((member, index) => (
-              <Card key={index} className="text-center">
+              <Card key={index} className="text-center w-full md:w-80">
                 <CardContent className="p-6">
                   <div className="bg-gray-200 w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <Users className="h-12 w-12 text-gray-400" />

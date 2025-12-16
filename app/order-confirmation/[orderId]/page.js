@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { CheckCircle, Package, Truck } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function OrderConfirmationPage({ params }) {
   const [order, setOrder] = useState(null)
@@ -94,7 +95,7 @@ export default function OrderConfirmationPage({ params }) {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Total</p>
-                  <p className="font-semibold">${order.total.toFixed(2)}</p>
+                  <p className="font-semibold">{formatPrice(order.total)}</p>
                 </div>
               </div>
             </CardContent>
@@ -113,7 +114,7 @@ export default function OrderConfirmationPage({ params }) {
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                     </div>
-                    <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ))}
               </div>

@@ -59,7 +59,7 @@ export default function ContactPage() {
     {
       icon: Mail,
       title: "Email Us",
-      content: "bilalamin4477@gmail.com",
+      content: "bilalamin1226@gmail.com",
       description: "Send us an email anytime",
     },
     {
@@ -99,7 +99,7 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
@@ -195,7 +195,7 @@ export default function ContactPage() {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Get in Touch</CardTitle>
               </CardHeader>
@@ -218,7 +218,7 @@ export default function ContactPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Frequently Asked</CardTitle>
               </CardHeader>
@@ -233,7 +233,7 @@ export default function ContactPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Order Support</CardTitle>
               </CardHeader>

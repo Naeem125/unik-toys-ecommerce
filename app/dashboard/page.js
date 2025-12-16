@@ -10,6 +10,7 @@ import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { Package, User, MapPin, CreditCard, ShoppingBag } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function UserDashboard() {
   const { user, loading } = useAuth()
@@ -100,7 +101,7 @@ export default function UserDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="py-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
@@ -110,17 +111,17 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="py-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalSpent.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{formatPrice(stats.totalSpent)}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="py-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
@@ -134,7 +135,7 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Orders */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="py-2">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Recent Orders</CardTitle>
                 <Button variant="outline" asChild>
@@ -169,7 +170,7 @@ export default function UserDashboard() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">${order.total.toFixed(2)}</p>
+                          <p className="font-bold">{formatPrice(order.total)}</p>
                           <Badge className={`${getStatusColor(order.status)} border-0`}>{order.status}</Badge>
                         </div>
                       </div>
@@ -190,7 +191,7 @@ export default function UserDashboard() {
 
           {/* Quick Actions */}
           <div className="space-y-6">
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
@@ -223,7 +224,7 @@ export default function UserDashboard() {
             </Card>
 
             {/* Account Info */}
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
               </CardHeader>

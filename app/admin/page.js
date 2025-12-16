@@ -1,526 +1,307 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import AdminLayout from "@/components/admin/AdminLayout"
-import { supabase, supabaseHelpers } from "@/lib/supabase"
-import { Plus, Edit, Trash2, X } from "lucide-react"
+import {
+  Package,
+  ShoppingCart,
+  Users,
+  DollarSign,
+  TrendingUp,
+  Clock,
+  CheckCircle
+} from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
-export default function AdminProducts() {
-  const [categories, setCategories] = useState([])
-  const [products, setProducts] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState(null)
-
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    short_description: "",
-    price: "",
-    compare_price: "",
-    category_id: "",
-    stock: "",
-    sku: "",
-    weight: "",
-    dimensions: { length: "", width: "", height: "" },
-    age_range: { min: "", max: "" },
-    tags: "",
-    is_featured: false,
-    images: []
+export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    totalOrders: 0,
+    totalUsers: 0,
+    totalRevenue: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    recentOrders: []
   })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchData()
+    fetchDashboardData()
   }, [])
 
-  const fetchData = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const [categoriesData, productsData] = await Promise.all([
-        supabaseHelpers.getCategories(),
-        supabaseHelpers.getProducts({})
-      ])
-      setCategories(categoriesData)
-      setProducts(productsData)
+      // Fetch products count
+      const productsRes = await fetch("/api/products")
+      const productsData = await productsRes.json()
+      const totalProducts = productsData.products?.length || 0
+
+      // Fetch orders
+      const ordersRes = await fetch("/api/admin/orders")
+      const ordersData = await ordersRes.json()
+      const orders = ordersData.orders || []
+
+      const totalOrders = orders.length
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
+      const pendingOrders = orders.filter(o => o.status === "pending").length
+      const completedOrders = orders.filter(o => o.status === "delivered").length
+      const recentOrders = orders.slice(0, 5)
+
+      // Fetch users count
+      const usersRes = await fetch("/api/admin/users")
+      const usersData = await usersRes.json()
+      const totalUsers = usersData.users?.length || 0
+
+      setStats({
+        totalProducts,
+        totalOrders,
+        totalUsers,
+        totalRevenue,
+        pendingOrders,
+        completedOrders,
+        recentOrders
+      })
     } catch (error) {
-      console.error("Error fetching data:", error)
-      setError("Failed to load data")
+      console.error("Error fetching dashboard data:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
-  }
-
-  const handleObjectInputChange = (field, subField, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: {
-        ...prev[field],
-        [subField]: value
-      }
-    }))
-  }
-
-  const handleFileChange = (e) => {
-    const files = e.target.files
-    if (!files) return
-
-    const newImages = Array.from(files).map(file => ({
-      file,
-      url: URL.createObjectURL(file)
-    }))
-
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...newImages]
-    }))
-
-    e.target.value = null
-  }
-
-  const removeImage = (index) => {
-    setFormData(prev => {
-      URL.revokeObjectURL(prev.images[index].url)
-      return {
-        ...prev,
-        images: prev.images.filter((_, i) => i !== index)
-      }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     })
   }
 
-  const uploadImages = async () => {
-    const uploadedImages = []
-
-    for (let i = 0; i < formData.images.length; i++) {
-      const img = formData.images[i]
-      if (img.url.startsWith("http")) {
-        uploadedImages.push({ url: img.url, alt: "" })
-        continue
-      }
-      const file = img.file
-      if (!file) continue
-
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-      const filePath = `products/${fileName}`
-
-      const { data, error } = await supabase.storage
-        .from("product-images")
-        .upload(filePath, file)
-
-      if (error) {
-        throw new Error(`Failed to upload image: ${error.message}`)
-      }
-
-      const { data: publicUrlData } = supabase
-        .storage
-        .from("product-images")
-        .getPublicUrl(filePath)
-
-      uploadedImages.push({ url: publicUrlData.publicUrl, alt: "" })
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      processing: "bg-purple-100 text-purple-800",
+      shipped: "bg-indigo-100 text-indigo-800",
+      delivered: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
     }
-
-    return uploadedImages
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-    setError("")
-
-    try {
-      const uploadedImages = await uploadImages()
-
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-
-      const productData = {
-        ...formData,
-        slug,
-        price: parseFloat(formData.price),
-        compare_price: formData.compare_price ? parseFloat(formData.compare_price) : null,
-        stock: parseInt(formData.stock),
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        dimensions: {
-          length: parseFloat(formData.dimensions.length) || null,
-          width: parseFloat(formData.dimensions.width) || null,
-          height: parseFloat(formData.dimensions.height) || null
-        },
-        age_range: {
-          min: parseInt(formData.age_range.min) || null,
-          max: parseInt(formData.age_range.max) || null
-        },
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        images: uploadedImages
-      }
-
-      if (editingProduct) {
-        await supabaseHelpers.updateProduct(editingProduct.id, productData)
-      } else {
-        await supabaseHelpers.createProduct(productData)
-      }
-
-      setIsDialogOpen(false)
-      resetForm()
-      fetchData()
-    } catch (error) {
-      console.error("Error saving product:", error)
-      setError(error.message || "Failed to save product")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleEdit = (product) => {
-    const images = (product.images || []).map(img => ({ url: img.url }))
-
-    setEditingProduct(product)
-    setFormData({
-      name: product.name || "",
-      description: product.description || "",
-      short_description: product.short_description || "",
-      price: product.price || "",
-      compare_price: product.compare_price || "",
-      category_id: product.category_id || "",
-      stock: product.stock || "",
-      sku: product.sku || "",
-      weight: product.weight || "",
-      dimensions: product.dimensions || { length: "", width: "", height: "" },
-      age_range: product.age_range || { min: "", max: "" },
-      tags: product.tags ? product.tags.join(', ') : "",
-      is_featured: product.is_featured || false,
-      images
-    })
-    setIsDialogOpen(true)
-  }
-
-  const handleDelete = async (productId) => {
-    if (!confirm("Are you sure you want to delete this product?")) return
-
-    try {
-      await supabaseHelpers.deleteProduct(productId)
-      fetchData()
-    } catch (error) {
-      console.error("Error deleting product:", error)
-      setError("Failed to delete product")
-    }
-  }
-
-  const resetForm = () => {
-    setEditingProduct(null)
-    setFormData({
-      name: "",
-      description: "",
-      short_description: "",
-      price: "",
-      compare_price: "",
-      category_id: "",
-      stock: "",
-      sku: "",
-      weight: "",
-      dimensions: { length: "", width: "", height: "" },
-      age_range: { min: "", max: "" },
-      tags: "",
-      is_featured: false,
-      images: []
-    })
-    setError("")
-  }
-
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId)
-    return category ? category.name : "Unknown"
+    return colors[status] || "bg-gray-100 text-gray-800"
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+    return (
+      <AdminLayout>
+        <div className="text-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b88a44] mx-auto"></div>
+          <p className="mt-4">Loading dashboard...</p>
+        </div>
+      </AdminLayout>
+    )
   }
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-            <p className="text-gray-600">Manage your products</p>
-          </div>
-          <Dialog
-            open={isDialogOpen}
-            onOpenChange={(open) => {
-              setIsDialogOpen(open)
-              if (!open) resetForm()
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button className="bg-[#b88a44] hover:bg-orange-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Product
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingProduct ? "Edit Product" : "Add New Product"}</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Product Name *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input
-                      id="sku"
-                      name="sku"
-                      value={formData.sku}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="short_description">Short Description</Label>
-                  <Input
-                    id="short_description"
-                    name="short_description"
-                    value={formData.short_description}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="price">Price *</Label>
-                    <Input
-                      id="price"
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="compare_price">Compare Price</Label>
-                    <Input
-                      id="compare_price"
-                      name="compare_price"
-                      type="number"
-                      step="0.01"
-                      value={formData.compare_price}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="stock">Stock *</Label>
-                    <Input
-                      id="stock"
-                      name="stock"
-                      type="number"
-                      value={formData.stock}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="category_id">Category *</Label>
-                  <Select value={formData.category_id} onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="tags">Tags (comma separated)</Label>
-                  <Input
-                    id="tags"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleInputChange}
-                    placeholder="tag1, tag2, tag3"
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    id="is_featured"
-                    name="is_featured"
-                    type="checkbox"
-                    checked={formData.is_featured}
-                    onChange={handleInputChange}
-                    className="rounded"
-                  />
-                  <Label htmlFor="is_featured">Featured Product</Label>
-                </div>
-
-                <div>
-                  <Label htmlFor="images">Images</Label>
-                  <Input
-                    id="images"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileChange}
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.images.map((image, index) => (
-                      <div key={index} className="relative w-20 h-20 border rounded overflow-hidden">
-                        <img src={image.url} alt="" className="object-cover w-full h-full" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="flex gap-2">
-                  <Button type="submit" disabled={saving} className="bg-[#b88a44] hover:bg-orange-700">
-                    {saving ? "Saving..." : editingProduct ? "Update Product" : "Create Product"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+        {/* Welcome Section */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your store.</p>
         </div>
 
-        {error && !isDialogOpen && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Revenue */}
+          <Card className="py-2 bg-gradient-to-br from-orange-50 to-white border-orange-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Revenue</CardTitle>
+              <DollarSign className="h-5 w-5 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-orange-600">
+                {formatPrice(stats.totalRevenue)}
+              </div>
+              <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                <TrendingUp className="h-3 w-3" />
+                From {stats.totalOrders} orders
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Products List */}
-        <Card>
+          {/* Total Orders */}
+          <Card className="py-2 bg-gradient-to-br from-blue-50 to-white border-blue-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Orders</CardTitle>
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{stats.totalOrders}</div>
+              <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {stats.pendingOrders} pending
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Total Products */}
+          <Card className="py-2 bg-gradient-to-br from-purple-50 to-white border-purple-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Products</CardTitle>
+              <Package className="h-5 w-5 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-purple-600">{stats.totalProducts}</div>
+              <p className="text-xs text-gray-600 mt-2">Active listings</p>
+            </CardContent>
+          </Card>
+
+          {/* Total Users */}
+          <Card className="py-2 bg-gradient-to-br from-green-50 to-white border-green-200">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">Total Users</CardTitle>
+              <Users className="h-5 w-5 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{stats.totalUsers}</div>
+              <p className="text-xs text-gray-600 mt-2">Registered accounts</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Order Status Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="py-2">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                Pending Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-yellow-600">{stats.pendingOrders}</div>
+              <p className="text-sm text-gray-600 mt-2">Awaiting processing</p>
+            </CardContent>
+          </Card>
+
+          <Card className="py-2">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Completed Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-green-600">{stats.completedOrders}</div>
+              <p className="text-sm text-gray-600 mt-2">Successfully delivered</p>
+            </CardContent>
+          </Card>
+
+          <Card className="py-2">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-blue-600" />
+                Completion Rate
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold text-blue-600">
+                {stats.totalOrders > 0
+                  ? Math.round((stats.completedOrders / stats.totalOrders) * 100)
+                  : 0}%
+              </div>
+              <p className="text-sm text-gray-600 mt-2">Order success rate</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Orders */}
+        <Card className="py-2">
           <CardHeader>
-            <CardTitle>Products ({products.length})</CardTitle>
+            <CardTitle>Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="bg-gray-200 w-16 h-16 rounded"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="bg-gray-200 h-4 rounded w-1/3"></div>
-                      <div className="bg-gray-200 h-3 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : products.length > 0 ? (
-              <div className="space-y-4">
-                {products.map((product) => (
-                  <div key={product.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                    {product.images && product.images[0] && (
-                      <img
-                        src={product.images[0].url}
-                        alt={product.name}
-                        className="w-16 h-16 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-sm text-gray-600">{product.short_description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary">${product.price}</Badge>
-                        <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                          Stock: {product.stock}
-                        </Badge>
-                        {product.is_featured && <Badge>Featured</Badge>}
-                        <span className="text-sm text-gray-500">{getCategoryName(product.category_id)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(product)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(product.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+            {stats.recentOrders.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p>No orders yet</p>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No products found</p>
-                <Button onClick={() => setIsDialogOpen(true)} className="mt-4">
-                  Add your first product
-                </Button>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Order #</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Customer</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Total</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.recentOrders.map((order) => (
+                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium">#{order.order_number}</td>
+                        <td className="py-3 px-4">{order.user_name}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {formatDate(order.created_at)}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-[#b88a44]">
+                          {formatPrice(order.total)}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="py-2 bg-gradient-to-br from-gray-50 to-white">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <a
+                href="/admin/products"
+                className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-gray-200 hover:border-[#b88a44] hover:shadow-md transition-all"
+              >
+                <Package className="h-8 w-8 text-[#b88a44] mb-2" />
+                <span className="text-sm font-medium text-gray-700">Manage Products</span>
+              </a>
+              <a
+                href="/admin/orders"
+                className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-gray-200 hover:border-[#b88a44] hover:shadow-md transition-all"
+              >
+                <ShoppingCart className="h-8 w-8 text-[#b88a44] mb-2" />
+                <span className="text-sm font-medium text-gray-700">View Orders</span>
+              </a>
+              <a
+                href="/admin/users"
+                className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-gray-200 hover:border-[#b88a44] hover:shadow-md transition-all"
+              >
+                <Users className="h-8 w-8 text-[#b88a44] mb-2" />
+                <span className="text-sm font-medium text-gray-700">Manage Users</span>
+              </a>
+              <a
+                href="/admin/settings"
+                className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-gray-200 hover:border-[#b88a44] hover:shadow-md transition-all"
+              >
+                <DollarSign className="h-8 w-8 text-[#b88a44] mb-2" />
+                <span className="text-sm font-medium text-gray-700">Settings</span>
+              </a>
+            </div>
           </CardContent>
         </Card>
       </div>
     </AdminLayout>
   )
-} 
+}

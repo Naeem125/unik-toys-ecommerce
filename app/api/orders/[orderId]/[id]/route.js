@@ -1,16 +1,16 @@
-// import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { requireAuth } from "@/lib/auth"
 
 export const GET = requireAuth(async (request, { user, params }) => {
     try {
-        const { orderId } = params
+        const { id } = params
 
         // Get the specific order
         const { data: order, error } = await supabaseAdmin
             .from("orders")
             .select("*")
-            .eq("id", orderId)
+            .eq("id", id)
             .single()
 
         if (error) {
@@ -29,4 +29,3 @@ export const GET = requireAuth(async (request, { user, params }) => {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 })
     }
 })
-// })

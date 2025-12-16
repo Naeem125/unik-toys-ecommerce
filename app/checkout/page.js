@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { loadStripe } from "@stripe/stripe-js"
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,27 +11,25 @@ import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
+import { formatPrice } from "@/lib/utils"
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-
-function CheckoutForm() {
-  const stripe = useStripe()
-  const elements = useElements()
+export default function CheckoutPage() {
   const router = useRouter()
   const { cart, cartTotal, clearCart } = useCart()
   const { user } = useAuth()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [clientSecret, setClientSecret] = useState("")
+  const [success, setSuccess] = useState(false)
 
   const [shippingAddress, setShippingAddress] = useState({
-    name: user?.name || "",
+    name: user?.user_metadata?.name || user?.name || "",
+    email: user?.email || "",
     street: "",
     city: "",
     state: "",
     zipCode: "",
-    country: "US",
+    country: "Pakistan",
     phone: "",
   })
 
@@ -42,47 +38,21 @@ function CheckoutForm() {
   const total = cartTotal + shippingCost + tax
 
   useEffect(() => {
+    if (!user) {
+      router.push("/login?redirect=/checkout")
+      return
+    }
+
     if (cart.length === 0) {
       router.push("/cart")
       return
     }
-
-    // Create payment intent
-    createPaymentIntent()
-  }, [cart, router])
-
-  const createPaymentIntent = async () => {
-    try {
-      const response = await fetch("/api/create-payment-intent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: total,
-        }),
-      })
-
-      const data = await response.json()
-      if (data.clientSecret) {
-        setClientSecret(data.clientSecret)
-      }
-    } catch (error) {
-      console.error("Error creating payment intent:", error)
-      setError("Failed to initialize payment")
-    }
-  }
+  }, [user, cart, router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError("")
     setLoading(true)
-
-    if (!stripe || !elements) {
-      setError("Stripe not loaded")
-      setLoading(false)
-      return
-    }
 
     // Validate shipping address
     if (!shippingAddress.name || !shippingAddress.street || !shippingAddress.city || !shippingAddress.zipCode) {
@@ -92,58 +62,42 @@ function CheckoutForm() {
     }
 
     try {
-      // Confirm payment
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: {
-            name: shippingAddress.name,
-            address: {
-              line1: shippingAddress.street,
-              city: shippingAddress.city,
-              state: shippingAddress.state,
-              postal_code: shippingAddress.zipCode,
-              country: shippingAddress.country,
-            },
-          },
+      // Create order
+      const orderResponse = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          items: cart,
+          shippingAddress,
+          paymentInfo: {
+            method: "pending",
+            status: "pending",
+          },
+          subtotal: cartTotal,
+          shippingCost,
+          tax,
+          total,
+        }),
       })
 
-      if (stripeError) {
-        setError(stripeError.message)
-        setLoading(false)
-        return
-      }
+      if (orderResponse.ok) {
+        const orderData = await orderResponse.json()
+        setSuccess(true)
+        clearCart()
 
-      if (paymentIntent.status === "succeeded") {
-        // Create order
-        const orderResponse = await fetch("/api/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: cart,
-            shippingAddress,
-            paymentInfo: {
-              method: "stripe",
-              transactionId: paymentIntent.id,
-              status: "completed",
-            },
-          }),
-        })
-
-        if (orderResponse.ok) {
-          const orderData = await orderResponse.json()
-          clearCart()
-          router.push(`/order-confirmation/${orderData.order._id}`)
-        } else {
-          setError("Failed to create order")
-        }
+        // Redirect to order confirmation or success page
+        setTimeout(() => {
+          router.push(`/dashboard/orders`)
+        }, 2000)
+      } else {
+        const errorData = await orderResponse.json()
+        setError(errorData.error || "Failed to create order")
       }
     } catch (error) {
-      console.error("Payment error:", error)
-      setError("Payment failed. Please try again.")
+      console.error("Order creation error:", error)
+      setError("Failed to create order. Please try again.")
     }
 
     setLoading(false)
@@ -156,12 +110,28 @@ function CheckoutForm() {
     }))
   }
 
+  if (!user) {
+    return <div>Redirecting...</div>
+  }
+
+  if (cart.length === 0) {
+    return <div>Redirecting...</div>
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+        {success ? (
+          <Alert className="mb-6 bg-green-50 border-green-200">
+            <AlertDescription className="text-green-800">
+              ✅ Order created successfully! Redirecting to your orders...
+            </AlertDescription>
+          </Alert>
+        ) : null}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Checkout Form */}
@@ -184,11 +154,34 @@ function CheckoutForm() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="phone">Phone</Label>
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={shippingAddress.email}
+                        onChange={(e) => handleAddressChange("email", e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="phone">Phone *</Label>
                       <Input
                         id="phone"
                         value={shippingAddress.phone}
                         onChange={(e) => handleAddressChange("phone", e.target.value)}
+                        placeholder="+923124712934"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country">Country *</Label>
+                      <Input
+                        id="country"
+                        value={shippingAddress.country}
+                        onChange={(e) => handleAddressChange("country", e.target.value)}
+                        required
                       />
                     </div>
                   </div>
@@ -212,7 +205,7 @@ function CheckoutForm() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="state">State</Label>
+                      <Label htmlFor="state">State/Province</Label>
                       <Input
                         id="state"
                         value={shippingAddress.state}
@@ -220,7 +213,7 @@ function CheckoutForm() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="zipCode">ZIP Code *</Label>
+                      <Label htmlFor="zipCode">ZIP/Postal Code *</Label>
                       <Input
                         id="zipCode"
                         value={shippingAddress.zipCode}
@@ -232,29 +225,15 @@ function CheckoutForm() {
                 </CardContent>
               </Card>
 
-              {/* Payment Information */}
-              <Card>
+              {/* Payment Information - Commented out for future implementation */}
+              {/* <Card>
                 <CardHeader>
                   <CardTitle>Payment Information</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-4 border rounded-lg">
-                    <CardElement
-                      options={{
-                        style: {
-                          base: {
-                            fontSize: "16px",
-                            color: "#424770",
-                            "::placeholder": {
-                              color: "#aab7c4",
-                            },
-                          },
-                        },
-                      }}
-                    />
-                  </div>
+                  <p className="text-gray-600">Payment integration will be added later</p>
                 </CardContent>
-              </Card>
+              </Card> */}
 
               {error && (
                 <Alert variant="destructive">
@@ -264,12 +243,16 @@ function CheckoutForm() {
 
               <Button
                 type="submit"
-                disabled={!stripe || loading}
+                disabled={loading || success}
                 className="w-full bg-[#b88a44] hover:bg-orange-700"
                 size="lg"
               >
-                {loading ? "Processing..." : `Pay $${total.toFixed(2)}`}
+                {loading ? "Creating Order..." : success ? "Order Created!" : `Place Order - ${formatPrice(total)}`}
               </Button>
+
+              <p className="text-sm text-gray-500 text-center">
+                Payment will be collected upon delivery
+              </p>
             </form>
           </div>
 
@@ -286,26 +269,31 @@ function CheckoutForm() {
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                     </div>
-                    <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                    <p className="font-medium">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ))}
 
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${cartTotal.toFixed(2)}</span>
+                    <span>{formatPrice(cartTotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>{shippingCost === 0 ? "Free" : `$${shippingCost.toFixed(2)}`}</span>
+                    <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                   </div>
+                  {cartTotal < 50 && (
+                    <p className="text-sm text-[#b88a44]">
+                      Add {formatPrice(50 - cartTotal)} more for free shipping!
+                    </p>
+                  )}
                   <div className="flex justify-between">
                     <span>Tax:</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>{formatPrice(tax)}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total:</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>{formatPrice(total)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -316,26 +304,5 @@ function CheckoutForm() {
 
       <Footer />
     </div>
-  )
-}
-
-export default function CheckoutPage() {
-  const { user } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!user) {
-      router.push("/login?redirect=/checkout")
-    }
-  }, [user, router])
-
-  if (!user) {
-    return <div>Redirecting...</div>
-  }
-
-  return (
-    <Elements stripe={stripePromise}>
-      <CheckoutForm />
-    </Elements>
   )
 }

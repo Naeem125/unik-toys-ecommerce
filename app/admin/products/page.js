@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import AdminLayout from "@/components/admin/AdminLayout"
 import { supabase, supabaseHelpers } from "@/lib/supabase"
 import { Plus, Edit, Trash2, X } from "lucide-react"
+import { formatPrice } from "@/lib/utils"
 
 export default function AdminProducts() {
   const [categories, setCategories] = useState([])
@@ -553,7 +554,7 @@ export default function AdminProducts() {
                       <h3 className="font-semibold text-lg">{product.name}</h3>
                       <p className="text-sm text-gray-600">{product.short_description}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary">${product.price}</Badge>
+                        <Badge variant="secondary">{formatPrice(product.price)}</Badge>
                         <Badge variant={product.stock > 0 ? "default" : "destructive"}>
                           Stock: {product.stock}
                         </Badge>
@@ -591,4 +592,4 @@ export default function AdminProducts() {
       </div>
     </AdminLayout>
   )
-} 
+}
