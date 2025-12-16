@@ -30,16 +30,14 @@ export default function Header() {
     window.location.href = "/"
   }
 
-  const navigation = [
+  const userNavigation = [
     { name: "Home", href: "/" },
     { name: "Shop", href: "/shop" },
     { name: "About", href: "/about" },
+    ...(user ? [{ name: "Orders", href: "/dashboard/orders" }] : []),
     { name: "Contact", href: "/contact" },
     { name: "FAQ", href: "/faq" },
   ]
-
-  // Add Orders link for logged-in users
-  const userNavigation = user ? [...navigation, { name: "Orders", href: "/dashboard/orders" }] : navigation
 
   return (
     <header className="shadow-xl border-b-2 border-amber-400/30" style={{ background: 'linear-gradient(to right, #b88a49, #d4a574, #b88a49)' }}>
