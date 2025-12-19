@@ -122,7 +122,7 @@ export default function OrderConfirmationPage({ params }) {
           </Card>
 
           {/* Shipping Address */}
-          <Card className="mb-6">
+          <Card className="mb-6 py-2">
             <CardHeader>
               <CardTitle>Shipping Address</CardTitle>
             </CardHeader>

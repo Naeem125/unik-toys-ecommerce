@@ -101,33 +101,39 @@ export default function UserDashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="py-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
+          <Card className="pb-2 overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-50/80 via-green-50/60 to-emerald-50/80 border-b border-emerald-100/50 px-6 py-4">
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-gray-800">Total Orders</CardTitle>
+                <Package className="h-4 w-4 text-emerald-700" />
+              </div>
+            </div>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-gray-900">{stats.totalOrders}</div>
             </CardContent>
           </Card>
 
-          <Card className="py-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatPrice(stats.totalSpent)}</div>
+          <Card className="pb-2 overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-50/80 via-sky-50/60 to-blue-50/80 border-b border-blue-100/50 px-6 py-4">
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-gray-800">Total Spent</CardTitle>
+                <CreditCard className="h-4 w-4 text-blue-700" />
+              </div>
+            </div>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-gray-900">{formatPrice(stats.totalSpent)}</div>
             </CardContent>
           </Card>
 
-          <Card className="py-2">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingOrders}</div>
+          <Card className="pb-2 overflow-hidden">
+            <div className="bg-gradient-to-r from-red-50/80 via-rose-50/60 to-red-50/80 border-b border-red-100/50 px-6 py-4">
+              <div className="flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-gray-800">Pending Orders</CardTitle>
+                <ShoppingBag className="h-4 w-4 text-red-700" />
+              </div>
+            </div>
+            <CardContent className="pt-6">
+              <div className="text-2xl font-bold text-gray-900">{stats.pendingOrders}</div>
             </CardContent>
           </Card>
         </div>
@@ -135,13 +141,15 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Orders */}
           <div className="lg:col-span-2">
-            <Card className="py-2">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Recent Orders</CardTitle>
-                <Button variant="outline" asChild>
-                  <Link href="/dashboard/orders">View All</Link>
-                </Button>
-              </CardHeader>
+            <Card className="pb-2 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-amber-50/80 border-b border-amber-100/50 px-6 py-4">
+                <div className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-gray-800">Recent Orders</CardTitle>
+                  <Button variant="outline" asChild className="border-gray-200 hover:bg-white/50">
+                    <Link href="/dashboard/orders">View All</Link>
+                  </Button>
+                </div>
+              </div>
               <CardContent>
                 {isLoading ? (
                   <div className="space-y-4">
@@ -191,10 +199,10 @@ export default function UserDashboard() {
 
           {/* Quick Actions */}
           <div className="space-y-6">
-            <Card className="py-2">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
+            <Card className="pb-2 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-amber-50/80 border-b border-amber-100/50 px-6 py-4">
+                <CardTitle className="text-lg font-semibold text-gray-800">Quick Actions</CardTitle>
+              </div>
               <CardContent className="space-y-3">
                 <Button asChild className="w-full justify-start bg-transparent" variant="outline">
                   <Link href="/dashboard/profile">
@@ -203,7 +211,7 @@ export default function UserDashboard() {
                   </Link>
                 </Button>
                 <Button asChild className="w-full justify-start bg-transparent" variant="outline">
-                  <Link href="/dashboard/addresses">
+                  <Link href="/dashboard/profile">
                     <MapPin className="h-4 w-4 mr-2" />
                     Manage Addresses
                   </Link>
@@ -224,10 +232,10 @@ export default function UserDashboard() {
             </Card>
 
             {/* Account Info */}
-            <Card className="py-2">
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-              </CardHeader>
+            <Card className="pb-2 overflow-hidden">
+              <div className="bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-amber-50/80 border-b border-amber-100/50 px-6 py-4">
+                <CardTitle className="text-lg font-semibold text-gray-800">Account Information</CardTitle>
+              </div>
               <CardContent className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-600">Name</p>

@@ -138,7 +138,7 @@ export default function CheckoutPage() {
           <div>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Shipping Address */}
-              <Card>
+              <Card className="py-2">
                 <CardHeader>
                   <CardTitle>Shipping Address</CardTitle>
                 </CardHeader>
@@ -258,7 +258,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div>
-            <Card>
+            <Card className="py-2">
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>

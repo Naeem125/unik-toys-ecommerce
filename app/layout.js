@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { CartProvider } from "@/contexts/CartContext"
+import { Toaster } from "@/components/ui/sonner"
 import './globals.css'
 
 export const metadata = {
@@ -20,7 +21,10 @@ export default function RootLayout({ children }) {
           </div>
         </div>}>
           <AuthProvider>
-            <CartProvider>{children}</CartProvider>
+            <CartProvider>
+              {children}
+              <Toaster />
+            </CartProvider>
           </AuthProvider>
         </Suspense>
       </body>

@@ -8,10 +8,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatPrice } from "@/lib/utils"
+import { Truck, XCircle, CheckCircle, Package, AlertCircle } from "lucide-react"
+import { toast } from "sonner"
+
+const CANCELLABLE_STATUSES = ['pending', 'confirmed']
 
 export default function OrderDetailsPage({ params }) {
   const { user, loading } = useAuth()
@@ -19,8 +26,12 @@ export default function OrderDetailsPage({ params }) {
   const { orderId } = params || {}
 
   const [order, setOrder] = useState(null)
+  const [history, setHistory] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -48,6 +59,7 @@ export default function OrderDetailsPage({ params }) {
 
       const data = await response.json()
       setOrder(data.order || null)
+      setHistory(data.history || [])
     } catch (err) {
       console.error("Error fetching order:", err)
       setError(err.message || "Failed to fetch order")
@@ -56,11 +68,47 @@ export default function OrderDetailsPage({ params }) {
     }
   }
 
+  const handleCancelOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error("Please provide a reason for cancellation")
+      return
+    }
+
+    try {
+      setCancelling(true)
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason: cancelReason })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        toast.success("Order cancelled successfully")
+        setShowCancelDialog(false)
+        setCancelReason("")
+        fetchOrder() // Refresh order data
+      } else {
+        toast.error(data.error || "Failed to cancel order")
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error)
+      toast.error("Failed to cancel order")
+    } finally {
+      setCancelling(false)
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case "delivered":
         return "bg-green-100 text-green-800 border-green-200"
       case "shipped":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "confirmed":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "processing":
         return "bg-purple-100 text-purple-800 border-purple-200"
@@ -73,14 +121,34 @@ export default function OrderDetailsPage({ params }) {
     }
   }
 
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "delivered":
+        return <CheckCircle className="h-5 w-5 text-green-600" />
+      case "shipped":
+        return <Truck className="h-5 w-5 text-blue-600" />
+      case "processing":
+      case "confirmed":
+        return <Package className="h-5 w-5 text-purple-600" />
+      case "cancelled":
+        return <XCircle className="h-5 w-5 text-red-600" />
+      default:
+        return <Package className="h-5 w-5 text-yellow-600" />
+    }
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return ""
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     })
   }
+
+  const canCancel = order && CANCELLABLE_STATUSES.includes(order.status)
 
   if (loading || isLoading) {
     return (
@@ -160,8 +228,12 @@ export default function OrderDetailsPage({ params }) {
                   </Badge>
                 </div>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>Order ID: {order.id}</p>
-                  {order.tracking_number && <p>Tracking Number: {order.tracking_number}</p>}
+                  {order.tracking_number && (
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-[#b88a44]" />
+                      <span className="font-mono font-semibold">{order.tracking_number}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -188,6 +260,57 @@ export default function OrderDetailsPage({ params }) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Status Timeline */}
+          {history.length > 0 && (
+            <Card className="border-none shadow-md">
+              <CardHeader>
+                <CardTitle>Order Status Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {history.map((entry, index) => (
+                    <div key={entry.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          index === history.length - 1 
+                            ? 'bg-[#b88a44] text-white' 
+                            : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {getStatusIcon(entry.status)}
+                        </div>
+                        {index < history.length - 1 && (
+                          <div className="w-0.5 h-full bg-gray-200 mt-2 min-h-[40px]" />
+                        )}
+                      </div>
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className={getStatusColor(entry.status)}>
+                            {entry.status?.charAt(0).toUpperCase() + entry.status?.slice(1)}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {entry.changed_by_type === 'superadmin' ? 'Updated by superadmin' : 
+                             entry.changed_by_type === 'admin' ? 'Updated by admin' : 
+                             entry.changed_by_type === 'user' ? 'Cancelled by you' : 'Updated'}
+                          </span>
+                        </div>
+                        {entry.tracking_number && (
+                          <div className="flex items-center gap-2 text-sm text-gray-700 mb-1 bg-gray-50 p-2 rounded">
+                            <Truck className="h-4 w-4 text-[#b88a44]" />
+                            <span className="font-mono font-semibold">{entry.tracking_number}</span>
+                          </div>
+                        )}
+                        {entry.notes && (
+                          <p className="text-sm text-gray-600 mb-1">{entry.notes}</p>
+                        )}
+                        <p className="text-xs text-gray-400">{formatDate(entry.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Items */}
@@ -288,10 +411,36 @@ export default function OrderDetailsPage({ params }) {
               {/* Actions */}
               <Card className="border-none shadow-md">
                 <CardContent className="space-y-3 pt-6">
+                  {canCancel && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setShowCancelDialog(true)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel Order
+                    </Button>
+                  )}
                   {order.status === "delivered" && (
                     <Button className="w-full bg-[#b88a44] hover:bg-orange-700">
                       Reorder Items
                     </Button>
+                  )}
+                  {(order.status === "cancelled" || order.status === "delivered") && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="font-medium text-amber-900">Need a refund?</p>
+                          <p className="text-amber-700 mt-1">
+                            Please contact our support team for assistance with refunds.
+                          </p>
+                          <Button variant="link" className="p-0 h-auto text-amber-700 underline mt-1" asChild>
+                            <Link href="/contact">Contact Support</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   <Button variant="outline" className="w-full bg-transparent" asChild>
                     <Link href="/contact">Need Help?</Link>
@@ -302,6 +451,53 @@ export default function OrderDetailsPage({ params }) {
           </div>
         </div>
       </div>
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason for cancellation</Label>
+              <Textarea
+                id="reason"
+                placeholder="Please tell us why you're cancelling this order..."
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-amber-700">
+                  If you need a refund, please contact our support team after cancellation.
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowCancelDialog(false)
+              setCancelReason("")
+            }}>
+              Keep Order
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelOrder}
+              disabled={cancelling || !cancelReason.trim()}
+            >
+              {cancelling ? "Cancelling..." : "Cancel Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

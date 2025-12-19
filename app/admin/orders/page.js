@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import AdminLayout from "@/components/admin/AdminLayout"
-import { Package, Calendar, DollarSign, User, Mail, MapPin } from "lucide-react"
+import { Package, Calendar, DollarSign, User, Mail, MapPin, Edit } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 
 export default function AdminOrdersPage() {
@@ -165,6 +167,14 @@ export default function AdminOrdersPage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="pt-6">
+                                    <div className="flex justify-end mb-4">
+                                        <Button asChild className="bg-[#b88a44] hover:bg-orange-700">
+                                            <Link href={`/admin/orders/${order.id}`}>
+                                                <Edit className="h-4 w-4 mr-2" />
+                                                Manage Order
+                                            </Link>
+                                        </Button>
+                                    </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Order Items */}
                                         <div>

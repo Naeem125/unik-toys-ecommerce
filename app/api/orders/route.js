@@ -32,6 +32,39 @@ export const POST = requireAuth(async (request, { user }) => {
             return NextResponse.json({ error: error.message || "Failed to create order" }, { status: 500 })
         }
 
+        // Create initial history entry for order creation
+        await supabaseAdmin
+            .from("order_history")
+            .insert({
+                order_id: order.id,
+                status: "pending",
+                previous_status: null,
+                changed_by: user.id,
+                changed_by_type: 'user',
+                metadata: {
+                    action: 'order_created'
+                }
+            })
+
+        const { error: historyError } = await supabaseAdmin
+            .from("order_history")
+            .insert({
+                order_id: order.id,
+                status: "pending",
+                previous_status: null,
+                changed_by: user.id,
+                changed_by_type: 'user',
+                metadata: {
+                    action: 'order_created'
+                }
+            });
+
+        if (historyError) {
+            console.error("Error creating order history:", historyError);
+            // Optionally, you might want to handle this error more gracefully,
+            // but for now, we'll just log it as per the original intent.
+        }
+
         return NextResponse.json({ order }, { status: 201 })
     } catch (error) {
         console.error("Order creation error:", error)
