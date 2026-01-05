@@ -11,7 +11,7 @@ import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { formatPrice } from "@/lib/utils"
+import { formatPrice, validatePakistaniPhone } from "@/lib/utils"
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -21,6 +21,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [phoneError, setPhoneError] = useState("")
 
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.user_metadata?.name || user?.name || "",
@@ -59,6 +60,27 @@ export default function CheckoutPage() {
       setLoading(false)
       return
     }
+
+    // Validate phone number
+    if (!shippingAddress.phone || shippingAddress.phone.trim() === "") {
+      setError("Phone number is required")
+      setLoading(false)
+      return
+    }
+
+    const phoneValidation = validatePakistaniPhone(shippingAddress.phone)
+    if (!phoneValidation.isValid) {
+      setError(phoneValidation.error || "Invalid phone number")
+      setPhoneError(phoneValidation.error || "Invalid phone number")
+      setLoading(false)
+      return
+    }
+
+    // Update phone with formatted version
+    setShippingAddress((prev) => ({
+      ...prev,
+      phone: phoneValidation.formatted,
+    }))
 
     try {
       // Create order
@@ -103,10 +125,37 @@ export default function CheckoutPage() {
   }
 
   const handleAddressChange = (field, value) => {
-    setShippingAddress((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    // Validate phone number in real-time
+    if (field === "phone") {
+      if (value.trim() === "") {
+        setPhoneError("")
+        setShippingAddress((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+        return
+      }
+      const validation = validatePakistaniPhone(value)
+      if (!validation.isValid) {
+        setPhoneError(validation.error || "Invalid phone number")
+        setShippingAddress((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+      } else {
+        setPhoneError("")
+        // Auto-format the phone number
+        setShippingAddress((prev) => ({
+          ...prev,
+          [field]: validation.formatted,
+        }))
+      }
+    } else {
+      setShippingAddress((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+    }
   }
 
   if (!user) {
@@ -168,11 +217,19 @@ export default function CheckoutPage() {
                       <Label htmlFor="phone">Phone *</Label>
                       <Input
                         id="phone"
+                        type="tel"
                         value={shippingAddress.phone}
                         onChange={(e) => handleAddressChange("phone", e.target.value)}
-                        placeholder="+923124712934"
+                        placeholder="+923124712934 or 03124712934"
                         required
+                        className={phoneError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}
                       />
+                      {phoneError && (
+                        <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                      )}
+                      {!phoneError && shippingAddress.phone && (
+                        <p className="text-xs text-gray-500 mt-1">Valid Pakistani phone number</p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="country">Country *</Label>

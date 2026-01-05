@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useAuth } from "@/contexts/AuthContext"
+import { validatePakistaniPhone } from "@/lib/utils"
 import { ArrowLeft, User, MapPin } from "lucide-react"
 
 export default function UserProfile() {
@@ -31,6 +32,7 @@ export default function UserProfile() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+  const [phoneError, setPhoneError] = useState("")
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,6 +61,23 @@ export default function UserProfile() {
     setIsLoading(true)
     setError("")
     setMessage("")
+    setPhoneError("")
+
+    // Validate phone number if provided
+    if (formData.phone && formData.phone.trim() !== "") {
+      const phoneValidation = validatePakistaniPhone(formData.phone)
+      if (!phoneValidation.isValid) {
+        setError(phoneValidation.error || "Invalid phone number")
+        setPhoneError(phoneValidation.error || "Invalid phone number")
+        setIsLoading(false)
+        return
+      }
+      // Update phone with formatted version
+      setFormData((prev) => ({
+        ...prev,
+        phone: phoneValidation.formatted,
+      }))
+    }
 
     try {
       const response = await fetch("/api/user/profile", {
@@ -95,10 +114,37 @@ export default function UserProfile() {
         },
       }))
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }))
+      // Validate phone number in real-time
+      if (field === "phone") {
+        if (value.trim() === "") {
+          setPhoneError("")
+          setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+          }))
+          return
+        }
+        const validation = validatePakistaniPhone(value)
+        if (!validation.isValid) {
+          setPhoneError(validation.error || "Invalid phone number")
+          setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+          }))
+        } else {
+          setPhoneError("")
+          // Auto-format the phone number
+          setFormData((prev) => ({
+            ...prev,
+            [field]: validation.formatted,
+          }))
+        }
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [field]: value,
+        }))
+      }
     }
   }
 
@@ -185,9 +231,17 @@ export default function UserProfile() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder="+1 (555) 000-0000"
-                      className="bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                      placeholder="+923124712934 or 03124712934"
+                      className={`bg-gray-50 border-gray-200 focus:bg-white transition-colors ${
+                        phoneError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                      }`}
                     />
+                    {phoneError && (
+                      <p className="text-sm text-red-600">{phoneError}</p>
+                    )}
+                    {!phoneError && formData.phone && (
+                      <p className="text-xs text-gray-500">Valid Pakistani phone number</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
