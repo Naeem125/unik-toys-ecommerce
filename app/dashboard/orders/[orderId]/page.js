@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCart } from "@/contexts/CartContext"
 import { formatPrice } from "@/lib/utils"
 import { Truck, XCircle, CheckCircle, Package, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
@@ -22,6 +23,7 @@ const CANCELLABLE_STATUSES = ['pending', 'confirmed']
 
 export default function OrderDetailsPage({ params }) {
   const { user, loading } = useAuth()
+  const { addToCart } = useCart()
   const router = useRouter()
   const { orderId } = params || {}
 
@@ -32,6 +34,7 @@ export default function OrderDetailsPage({ params }) {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelReason, setCancelReason] = useState("")
   const [cancelling, setCancelling] = useState(false)
+  const [reordering, setReordering] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -102,19 +105,81 @@ export default function OrderDetailsPage({ params }) {
     }
   }
 
+  const handleReorder = async () => {
+    if (!order?.items || order.items.length === 0) {
+      toast.error("No items to reorder")
+      return
+    }
+
+    try {
+      setReordering(true)
+      let addedCount = 0
+      let failedCount = 0
+
+      // Add each item from the order to the cart
+      for (const item of order.items) {
+        try {
+          // Construct product object from order item
+          // Order items have: id, name, price, quantity, image
+          const product = {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            images: item.image ? [{ url: item.image }] : [],
+            stock: item.stock || 999, // Default stock if not available
+          }
+
+          // Add to cart with the original quantity
+          addToCart(product, item.quantity)
+          addedCount++
+        } catch (error) {
+          console.error(`Error adding item ${item.name} to cart:`, error)
+          failedCount++
+        }
+      }
+
+      if (addedCount > 0) {
+        toast.success(
+          `${addedCount} item${addedCount > 1 ? 's' : ''} added to cart${failedCount > 0 ? ` (${failedCount} failed)` : ''}`
+        )
+        // Redirect to cart page after a short delay
+        setTimeout(() => {
+          router.push("/cart")
+        }, 1000)
+      } else {
+        toast.error("Failed to add items to cart")
+      }
+    } catch (error) {
+      console.error("Error reordering:", error)
+      toast.error("Failed to reorder items")
+    } finally {
+      setReordering(false)
+    }
+  }
+
   const getStatusColor = (status) => {
     switch (status) {
       case "delivered":
         return "bg-green-100 text-green-800 border-green-200"
       case "shipped":
         return "bg-blue-100 text-blue-800 border-blue-200"
+      case "out_for_delivery":
+        return "bg-cyan-100 text-cyan-800 border-cyan-200"
       case "confirmed":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "processing":
         return "bg-purple-100 text-purple-800 border-purple-200"
+      case "on_hold":
+        return "bg-orange-100 text-orange-800 border-orange-200"
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      case "returned":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "refunded":
+        return "bg-gray-200 text-gray-800 border-gray-300"
       case "cancelled":
+        return "bg-red-200 text-red-900 border-red-300"
+      case "payment_failed":
         return "bg-red-100 text-red-800 border-red-200"
       default:
         return "bg-gray-100 text-gray-800 border-gray-200"
@@ -125,13 +190,20 @@ export default function OrderDetailsPage({ params }) {
     switch (status) {
       case "delivered":
         return <CheckCircle className="h-5 w-5 text-green-600" />
+      case "out_for_delivery":
       case "shipped":
         return <Truck className="h-5 w-5 text-blue-600" />
       case "processing":
       case "confirmed":
         return <Package className="h-5 w-5 text-purple-600" />
       case "cancelled":
+      case "payment_failed":
         return <XCircle className="h-5 w-5 text-red-600" />
+      case "returned":
+      case "refunded":
+        return <XCircle className="h-5 w-5 text-red-600" />
+      case "on_hold":
+        return <Package className="h-5 w-5 text-orange-600" />
       default:
         return <Package className="h-5 w-5 text-yellow-600" />
     }
@@ -247,10 +319,6 @@ export default function OrderDetailsPage({ params }) {
                   <span className="font-medium">
                     {order.shipping_cost === 0 ? "Free" : formatPrice(order.shipping_cost || 0)}
                   </span>
-                </p>
-                <p className="text-sm text-gray-600 flex justify-between gap-8">
-                  <span>Tax</span>
-                  <span className="font-medium">{formatPrice(order.tax || 0)}</span>
                 </p>
                 <Separator className="my-1" />
                 <p className="text-lg font-bold text-gray-900 flex justify-between gap-8">
@@ -422,8 +490,12 @@ export default function OrderDetailsPage({ params }) {
                     </Button>
                   )}
                   {order.status === "delivered" && (
-                    <Button className="w-full bg-[#b88a44] hover:bg-orange-700">
-                      Reorder Items
+                    <Button 
+                      className="w-full bg-[#b88a44] hover:bg-orange-700"
+                      onClick={handleReorder}
+                      disabled={reordering}
+                    >
+                      {reordering ? "Adding to Cart..." : "Reorder Items"}
                     </Button>
                   )}
                   {(order.status === "cancelled" || order.status === "delivered") && (

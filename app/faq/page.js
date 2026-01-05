@@ -45,7 +45,7 @@ export default function FAQPage() {
         {
           question: "How much does shipping cost?",
           answer:
-            `We offer free shipping on all orders over ${formatPrice(50)}. For orders under ${formatPrice(50)}, standard shipping is ${formatPrice(9.99)}. Express shipping options are available at checkout.`,
+            `We offer free shipping on all orders over ${formatPrice(3000)}. For orders under ${formatPrice(3000)}, standard shipping is ${formatPrice(300)}.`,
         },
         {
           question: "How long does delivery take?",

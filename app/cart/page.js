@@ -26,9 +26,8 @@ export default function CartPage() {
     }
   }
 
-  const shippingCost = cartTotal >= 50 ? 0 : 9.99
-  const tax = cartTotal * 0.08
-  const total = cartTotal + shippingCost + tax
+  const shippingCost = cartTotal > 3000 ? 0 : 300
+  const total = cartTotal + shippingCost
 
   if (cart.length === 0) {
     return (
@@ -139,13 +138,9 @@ export default function CartPage() {
                   <span>Shipping:</span>
                   <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                 </div>
-                {cartTotal < 50 && (
-                  <p className="text-sm text-[#b88a44]">Add {formatPrice(50 - cartTotal)} more for free shipping!</p>
+                {cartTotal <= 3000 && (
+                  <p className="text-sm text-[#b88a44]">Add {formatPrice(3000 - cartTotal + 1)} more for free shipping!</p>
                 )}
-                <div className="flex justify-between">
-                  <span>Tax:</span>
-                  <span>{formatPrice(tax)}</span>
-                </div>
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>

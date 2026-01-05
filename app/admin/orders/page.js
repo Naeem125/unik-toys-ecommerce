@@ -5,14 +5,16 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import AdminLayout from "@/components/admin/AdminLayout"
-import { Package, Calendar, DollarSign, User, Mail, MapPin, Edit } from "lucide-react"
+import { Package, Calendar, DollarSign, User, Mail, MapPin, Edit, Table2, List } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const [viewMode, setViewMode] = useState("table") // "table" or "list"
 
     useEffect(() => {
         fetchOrders()
@@ -39,10 +41,15 @@ export default function AdminOrdersPage() {
         const colors = {
             pending: "bg-yellow-100 text-yellow-800",
             confirmed: "bg-blue-100 text-blue-800",
+            on_hold: "bg-orange-100 text-orange-800",
             processing: "bg-purple-100 text-purple-800",
             shipped: "bg-indigo-100 text-indigo-800",
+            out_for_delivery: "bg-cyan-100 text-cyan-800",
             delivered: "bg-green-100 text-green-800",
-            cancelled: "bg-red-100 text-red-800",
+            returned: "bg-red-100 text-red-800",
+            refunded: "bg-gray-200 text-gray-800",
+            cancelled: "bg-red-200 text-red-900",
+            payment_failed: "bg-red-100 text-red-800",
         }
         return colors[status] || "bg-gray-100 text-gray-800"
     }
@@ -125,7 +132,7 @@ export default function AdminOrdersPage() {
                     </Card>
                 </div>
 
-                {/* Orders List */}
+                {/* View Toggle and Orders */}
                 {orders.length === 0 ? (
                     <Card>
                         <CardContent className="py-16 text-center">
@@ -135,7 +142,81 @@ export default function AdminOrdersPage() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-4 py-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                            <CardTitle>Orders</CardTitle>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant={viewMode === "table" ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setViewMode("table")}
+                                    className="h-9"
+                                >
+                                    <Table2 className="h-4 w-4 mr-2" />
+                                    Table
+                                </Button>
+                                <Button
+                                    variant={viewMode === "list" ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setViewMode("list")}
+                                    className="h-9"
+                                >
+                                    <List className="h-4 w-4 mr-2" />
+                                    List
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {viewMode === "table" ? (
+                                <div className="rounded-md border">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Order #</TableHead>
+                                                <TableHead>Date</TableHead>
+                                                <TableHead>Customer</TableHead>
+                                                <TableHead>Email</TableHead>
+                                                <TableHead>Items</TableHead>
+                                                <TableHead>Total</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {orders.map((order) => (
+                                                <TableRow key={order.id}>
+                                                    <TableCell className="font-medium">
+                                                        {order.order_number}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {formatDate(order.created_at)}
+                                                    </TableCell>
+                                                    <TableCell>{order.user_name || "N/A"}</TableCell>
+                                                    <TableCell>{order.user_email || "N/A"}</TableCell>
+                                                    <TableCell>{order.items?.length || 0}</TableCell>
+                                                    <TableCell className="font-semibold">
+                                                        {formatPrice(order.total || 0)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge className={getStatusColor(order.status)}>
+                                                            {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button asChild size="sm" className="bg-[#b88a44] hover:bg-orange-700">
+                                                            <Link href={`/admin/orders/${order.id}`}>
+                                                                <Edit className="h-4 w-4 mr-2" />
+                                                                Manage
+                                                            </Link>
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
                         {orders.map((order) => (
                             <Card key={order.id} className="overflow-hidden">
                                 <CardHeader className="bg-gray-50 border-b">
@@ -230,10 +311,6 @@ export default function AdminOrdersPage() {
                                                     <span className="text-gray-600">Shipping:</span>
                                                     <span>{formatPrice(order.shipping_cost || 0)}</span>
                                                 </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-600">Tax:</span>
-                                                    <span>{formatPrice(order.tax || 0)}</span>
-                                                </div>
                                                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                                                     <span>Total:</span>
                                                     <span className="text-[#b88a44]">{formatPrice(order.total || 0)}</span>
@@ -244,7 +321,10 @@ export default function AdminOrdersPage() {
                                 </CardContent>
                             </Card>
                         ))}
-                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 )}
             </div>
         </AdminLayout>

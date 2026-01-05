@@ -18,10 +18,15 @@ import { toast } from "sonner"
 const STATUS_OPTIONS = [
     { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
     { value: 'confirmed', label: 'Confirmed', color: 'bg-blue-100 text-blue-800' },
+    { value: 'on_hold', label: 'On Hold', color: 'bg-orange-100 text-orange-800' },
     { value: 'processing', label: 'Processing', color: 'bg-purple-100 text-purple-800' },
     { value: 'shipped', label: 'Shipped', color: 'bg-indigo-100 text-indigo-800' },
+    { value: 'out_for_delivery', label: 'Out for Delivery', color: 'bg-cyan-100 text-cyan-800' },
     { value: 'delivered', label: 'Delivered', color: 'bg-green-100 text-green-800' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-red-100 text-red-800' }
+    { value: 'returned', label: 'Returned', color: 'bg-red-100 text-red-800' },
+    { value: 'refunded', label: 'Refunded', color: 'bg-gray-200 text-gray-800' },
+    { value: 'cancelled', label: 'Cancelled', color: 'bg-red-200 text-red-900' },
+    { value: 'payment_failed', label: 'Payment Failed', color: 'bg-red-100 text-red-800' }
 ]
 
 export default function AdminOrderDetailPage({ params }) {
@@ -345,10 +350,6 @@ export default function AdminOrderDetailPage({ params }) {
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Shipping:</span>
                                         <span>{formatPrice(order.shipping_cost || 0)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">Tax:</span>
-                                        <span>{formatPrice(order.tax || 0)}</span>
                                     </div>
                                     <Separator />
                                     <div className="flex justify-between text-lg font-bold">

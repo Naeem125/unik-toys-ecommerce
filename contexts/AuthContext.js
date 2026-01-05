@@ -57,6 +57,14 @@ export function AuthProvider({ children }) {
       const data = await response.json()
 
       if (response.ok) {
+        // Set the session in Supabase client storage so getSession() works after page refresh
+        if (data.session?.access_token && data.session?.refresh_token) {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token
+          })
+        }
+        
         setUser(data.user)
         return { success: true, user: data.user }
       } else {

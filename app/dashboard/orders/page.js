@@ -9,24 +9,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import { useAuth } from "@/contexts/AuthContext"
-import { Package, Search, Eye, ArrowLeft, Calendar, DollarSign, MapPin, User } from "lucide-react"
+import { useCart } from "@/contexts/CartContext"
+import { Package, Search, Eye, ArrowLeft, Calendar, DollarSign, MapPin, User, Table2, List } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
+import { toast } from "sonner"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function OrderHistory() {
   const { user, loading } = useAuth()
+  const { addToCart } = useCart()
   const router = useRouter()
   const [orders, setOrders] = useState([])
   const [filteredOrders, setFilteredOrders] = useState([])
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
-  const [selectedOrder, setSelectedOrder] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [reorderingOrderId, setReorderingOrderId] = useState(null)
+  const [viewMode, setViewMode] = useState("table") // "table" or "list"
 
   useEffect(() => {
     if (!loading && !user) {
@@ -83,20 +86,79 @@ export default function OrderHistory() {
         return "bg-emerald-50 text-emerald-700 border-emerald-200"
       case "shipped":
         return "bg-blue-50 text-blue-700 border-blue-200"
+      case "out_for_delivery":
+        return "bg-cyan-50 text-cyan-700 border-cyan-200"
       case "processing":
         return "bg-purple-50 text-purple-700 border-purple-200"
+      case "on_hold":
+        return "bg-orange-50 text-orange-700 border-orange-200"
       case "pending":
         return "bg-amber-50 text-amber-700 border-amber-200"
+      case "confirmed":
+        return "bg-blue-50 text-blue-700 border-blue-200"
+      case "returned":
+        return "bg-red-50 text-red-700 border-red-200"
+      case "refunded":
+        return "bg-gray-100 text-gray-700 border-gray-300"
       case "cancelled":
+        return "bg-red-50 text-red-700 border-red-200"
+      case "payment_failed":
         return "bg-red-50 text-red-700 border-red-200"
       default:
         return "bg-gray-50 text-gray-700 border-gray-200"
     }
   }
 
-  const handleViewDetails = (order) => {
-    setSelectedOrder(order)
-    setIsModalOpen(true)
+  const handleReorder = async (order) => {
+    if (!order?.items || order.items.length === 0) {
+      toast.error("No items to reorder")
+      return
+    }
+
+    try {
+      setReorderingOrderId(order.id)
+      let addedCount = 0
+      let failedCount = 0
+
+      // Add each item from the order to the cart
+      for (const item of order.items) {
+        try {
+          // Construct product object from order item
+          // Order items have: id, name, price, quantity, image
+          const product = {
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            images: item.image ? [{ url: item.image }] : [],
+            stock: item.stock || 0, // Default stock if not available
+          }
+
+          // Add to cart with the original quantity
+          addToCart(product, item.quantity)
+          addedCount++
+        } catch (error) {
+          console.error(`Error adding item ${item.name} to cart:`, error)
+          failedCount++
+        }
+      }
+
+      if (addedCount > 0) {
+        toast.success(
+          `${addedCount} item${addedCount > 1 ? 's' : ''} added to cart${failedCount > 0 ? ` (${failedCount} failed)` : ''}`
+        )
+        // Redirect to cart page after a short delay
+        setTimeout(() => {
+          router.push("/cart")
+        }, 1000)
+      } else {
+        toast.error("Failed to add items to cart")
+      }
+    } catch (error) {
+      console.error("Error reordering:", error)
+      toast.error("Failed to reorder items")
+    } finally {
+      setReorderingOrderId(null)
+    }
   }
 
   const formatDate = (dateString) => {
@@ -147,7 +209,7 @@ export default function OrderHistory() {
           </div>
 
           {/* Filters */}
-          <Card className="mb-8 border border-gray-200 shadow-sm bg-white/80 backdrop-blur-sm py-2">
+          <Card className="mb-8 border border-gray-200 shadow-sm bg-white/80 backdrop-blur-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Search className="h-5 w-5 text-[#b88a44]" />
@@ -186,7 +248,7 @@ export default function OrderHistory() {
             </CardContent>
           </Card>
 
-          {/* Orders List */}
+          {/* Orders View */}
           {isLoading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -205,7 +267,91 @@ export default function OrderHistory() {
               ))}
             </div>
           ) : filteredOrders.length > 0 ? (
-            <div className="space-y-5">
+            <Card className="border border-gray-200 shadow-sm bg-white/90">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardTitle>Your Orders</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={viewMode === "table" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("table")}
+                    className="h-9"
+                  >
+                    <Table2 className="h-4 w-4 mr-2" />
+                    Table
+                  </Button>
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="h-9"
+                  >
+                    <List className="h-4 w-4 mr-2" />
+                    List
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {viewMode === "table" ? (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order #</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Items</TableHead>
+                          <TableHead>Total</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredOrders.map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell className="font-medium">
+                              {order.order_number}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(order.created_at)}
+                            </TableCell>
+                            <TableCell>{order.items?.length || 0} item{order.items?.length !== 1 ? 's' : ''}</TableCell>
+                            <TableCell className="font-semibold">
+                              {formatPrice(order.total || 0)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(order.status)}>
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1).replace(/_/g, " ")}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                                >
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View
+                                </Button>
+                                {order.status === "delivered" && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-[#b88a44] hover:bg-[#a67a3a] text-white"
+                                    onClick={() => handleReorder(order)}
+                                    disabled={reorderingOrderId === order.id}
+                                  >
+                                    {reorderingOrderId === order.id ? "Adding..." : "Buy Again"}
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
               {filteredOrders.map((order) => (
                 <Card key={order.id} className="border border-gray-200 shadow-sm bg-white/90 backdrop-blur-sm hover:shadow-md hover:border-[#b88a44]/30 transition-all duration-300 overflow-hidden">
                   {/* Card Header */}
@@ -273,14 +419,18 @@ export default function OrderHistory() {
                         <Button
                           variant="outline"
                           className="flex-1 sm:flex-none border-gray-200 hover:bg-gray-50 hover:border-[#b88a44]"
-                          onClick={() => handleViewDetails(order)}
+                          onClick={() => router.push(`/dashboard/orders/${order.id}`)}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
                         {order.status === "delivered" && (
-                          <Button className="flex-1 sm:flex-none bg-[#b88a44] hover:bg-[#a67a3a] text-white">
-                            Buy Again
+                          <Button 
+                            className="flex-1 sm:flex-none bg-[#b88a44] hover:bg-[#a67a3a] text-white"
+                            onClick={() => handleReorder(order)}
+                            disabled={reorderingOrderId === order.id}
+                          >
+                            {reorderingOrderId === order.id ? "Adding..." : "Buy Again"}
                           </Button>
                         )}
                       </div>
@@ -288,7 +438,10 @@ export default function OrderHistory() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <Card className="border border-gray-200 shadow-sm bg-white/90">
               <CardContent className="text-center py-16">
@@ -308,126 +461,6 @@ export default function OrderHistory() {
             </Card>
           )}
         </div>
-
-        {/* Order Details Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 gap-0">
-            <DialogHeader className="p-6 bg-gradient-to-r from-amber-50/80 via-orange-50/60 to-amber-50/80 border-b border-amber-100/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <DialogTitle className="text-xl font-semibold text-gray-900">
-                    Order #{selectedOrder?.order_number}
-                  </DialogTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Placed on {selectedOrder && formatDate(selectedOrder.created_at)}
-                  </p>
-                </div>
-                {selectedOrder && (
-                  <Badge 
-                    className={`${getStatusColor(selectedOrder.status)} text-sm px-3 py-1 border font-medium`}
-                  >
-                    {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
-                  </Badge>
-                )}
-              </div>
-            </DialogHeader>
-
-            {selectedOrder && (
-              <div className="p-6 space-y-8 bg-white">
-                {/* Order Items */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-                    <Package className="h-5 w-5 text-[#b88a44]" />
-                    <h3 className="font-semibold text-gray-900">Items Ordered</h3>
-                  </div>
-                  <div className="space-y-3">
-                    {selectedOrder.items?.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-4 p-4 bg-gray-50/50 rounded-lg border border-gray-100">
-                        <div className="relative w-20 h-20 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                          <Image
-                            src={item.image || "/placeholder.svg?height=80&width=80&query=toy"}
-                            alt={item.name || 'Product'}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Unit Price: {formatPrice(item.price)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</p>
-                          <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Shipping Info */}
-                  {selectedOrder.shipping_address && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-                        <MapPin className="h-5 w-5 text-[#b88a44]" />
-                        <h3 className="font-semibold text-gray-900">Shipping Details</h3>
-                      </div>
-                      <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100 text-sm space-y-2">
-                        <p className="font-semibold text-gray-900 text-base mb-2">{selectedOrder.shipping_address.name}</p>
-                        <p className="text-gray-600">{selectedOrder.shipping_address.street}</p>
-                        <p className="text-gray-600">
-                          {selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zipCode}
-                        </p>
-                        <p className="text-gray-600">{selectedOrder.shipping_address.country}</p>
-                        <Separator className="my-3" />
-                        <p className="text-gray-600">{selectedOrder.shipping_address.phone}</p>
-                        <p className="text-gray-600">{selectedOrder.shipping_address.email}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Order Summary */}
-                  <div>
-                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-                      <DollarSign className="h-5 w-5 text-[#b88a44]" />
-                      <h3 className="font-semibold text-gray-900">Payment Summary</h3>
-                    </div>
-                    <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100 space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Subtotal</span>
-                        <span className="font-medium text-gray-900">{formatPrice(selectedOrder.subtotal || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Shipping</span>
-                        <span className="font-medium text-gray-900">{formatPrice(selectedOrder.shipping_cost || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Tax</span>
-                        <span className="font-medium text-gray-900">{formatPrice(selectedOrder.tax || 0)}</span>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex justify-between text-lg font-bold pt-1">
-                        <span className="text-gray-900">Total</span>
-                        <span className="text-[#b88a44]">{formatPrice(selectedOrder.total || 0)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end">
-              <Button 
-                onClick={() => setIsModalOpen(false)}
-                className="bg-[#b88a44] hover:bg-[#a67a3a] text-white"
-              >
-                Close
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
       <Footer />
     </div>

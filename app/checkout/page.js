@@ -33,9 +33,8 @@ export default function CheckoutPage() {
     phone: "",
   })
 
-  const shippingCost = cartTotal >= 50 ? 0 : 9.99
-  const tax = cartTotal * 0.08
-  const total = cartTotal + shippingCost + tax
+  const shippingCost = cartTotal > 3000 ? 0 : 300
+  const total = cartTotal + shippingCost
 
   useEffect(() => {
     if (!user) {
@@ -77,7 +76,7 @@ export default function CheckoutPage() {
           },
           subtotal: cartTotal,
           shippingCost,
-          tax,
+          tax: 0,
           total,
         }),
       })
@@ -282,15 +281,11 @@ export default function CheckoutPage() {
                     <span>Shipping:</span>
                     <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                   </div>
-                  {cartTotal < 50 && (
+                  {cartTotal <= 3000 && (
                     <p className="text-sm text-[#b88a44]">
-                      Add {formatPrice(50 - cartTotal)} more for free shipping!
+                      Add {formatPrice(3000 - cartTotal + 1)} more for free shipping!
                     </p>
                   )}
-                  <div className="flex justify-between">
-                    <span>Tax:</span>
-                    <span>{formatPrice(tax)}</span>
-                  </div>
                   <div className="flex justify-between text-lg font-bold border-t pt-2">
                     <span>Total:</span>
                     <span>{formatPrice(total)}</span>

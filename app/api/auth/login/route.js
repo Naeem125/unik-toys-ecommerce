@@ -11,11 +11,8 @@ export async function POST(request) {
     }
 
     // Sign in user with Supabase
-    const { user, session, error } = await supabaseHelpers.signInUser(email, password)
-
-    if (error) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
-    }
+    const data = await supabaseHelpers.signInUser(email, password)
+    const { user, session } = data
 
     // Create response with session token in cookie
     const response = NextResponse.json({
@@ -23,9 +20,13 @@ export async function POST(request) {
       user: {
         id: user.id,
         email: user.email,
-        name: user.user_metadata?.name || user.email,
-        role: user.user_metadata?.role || 'user'
+        name: user.user_metadata?.name,
+        role: user.user_metadata?.role
       },
+      session: {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      }
     })
 
     if (session?.access_token) {
@@ -40,6 +41,41 @@ export async function POST(request) {
     return response
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+
+    // Handle authentication errors (invalid credentials)
+    if (error?.name === 'AuthApiError' || error?.status === 400) {
+      const errorMessage = error?.message || "Invalid email or password"
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 401 }
+      )
+    }
+
+    // Handle network/DNS errors
+    const isNetworkError = error?.code === 'ENOTFOUND' ||
+                          error?.cause?.code === 'ENOTFOUND' ||
+                          error?.message?.includes('fetch failed') ||
+                          error?.message?.includes('getaddrinfo')
+
+    if (isNetworkError || (error?.__isAuthError && error?.status === 0)) {
+      return NextResponse.json(
+        { error: "Cannot connect to authentication service. Please try again later." },
+        { status: 503 }
+      )
+    }
+
+    // Handle validation errors
+    if (error?.status === 422 || error?.code === 'validation_failed') {
+      return NextResponse.json(
+        { error: error?.message || "Invalid request data" },
+        { status: 400 }
+      )
+    }
+
+    // Generic server error for unexpected errors
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again later." },
+      { status: 500 }
+    )
   }
 }

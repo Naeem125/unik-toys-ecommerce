@@ -3,15 +3,20 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin"
 import { requireAdmin } from "@/lib/auth"
 
 // Valid order statuses
-const VALID_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
+const VALID_STATUSES = ['pending', 'confirmed', 'on_hold', 'processing', 'shipped', 'out_for_delivery', 'delivered', 'returned', 'refunded', 'cancelled', 'payment_failed']
 
 // Valid status transitions (from -> to)
 const VALID_TRANSITIONS = {
-    'pending': ['confirmed', 'cancelled'],
-    'confirmed': ['processing', 'cancelled'],
-    'processing': ['shipped', 'cancelled'],
-    'shipped': ['delivered'],
-    'delivered': [], // Final state
+    'pending': ['confirmed', 'cancelled', 'payment_failed', 'on_hold'],
+    'confirmed': ['processing', 'cancelled', 'on_hold'],
+    'payment_failed': ['pending', 'cancelled'],
+    'on_hold': ['confirmed', 'processing', 'cancelled'],
+    'processing': ['shipped', 'cancelled', 'on_hold'],
+    'shipped': ['out_for_delivery', 'delivered'],
+    'out_for_delivery': ['delivered'],
+    'delivered': ['returned', 'refunded'],
+    'returned': ['refunded'],
+    'refunded': [], // Final state
     'cancelled': [] // Final state
 }
 
