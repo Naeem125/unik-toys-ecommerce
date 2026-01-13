@@ -17,20 +17,20 @@ import { supabase, supabaseHelpers } from "@/lib/supabase"
 
 export default function AdminCategories() {
   const { user, loading } = useAuth()
-  const router = useRouter()
+
   const [categories, setCategories] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [saving, setSaving] = useState(false)
-  const allowedRoles = ["admin", "superadmin"]
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     sort_order: 0,
-    image: null // Changed to handle file object
+    image: null, // Changed to handle file object
+    is_active: true
   })
 
   useEffect(() => {
@@ -137,7 +137,8 @@ export default function AdminCategories() {
         description: formData.description,
         image: imageUrl || formData.image?.url || "",
         sort_order: formData.sort_order,
-        slug: slugify(formData.name)
+        slug: slugify(formData.name),
+        is_active: formData.is_active
       };
 
 
@@ -167,7 +168,8 @@ export default function AdminCategories() {
       name: category.name,
       description: category.description || "",
       sort_order: category.sort_order || 0,
-      image: category.image ? { url: category.image } : null
+      image: category.image ? { url: category.image } : null,
+      is_active: category.is_active ?? true
     })
     setIsDialogOpen(true)
   }
@@ -176,16 +178,8 @@ export default function AdminCategories() {
     if (!confirm("Are you sure you want to delete this category?")) return
 
     try {
-      const response = await fetch(`/api/admin/categories/${categoryId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        fetchCategories()
-      } else {
-        const data = await response.json()
-        setError(data.error || "Failed to delete category")
-      }
+      await supabaseHelpers.deleteCategory(categoryId)
+      await fetchCategories()
     } catch (error) {
       console.error("Error deleting category:", error)
       setError("Failed to delete category")
@@ -203,7 +197,8 @@ export default function AdminCategories() {
       name: "",
       description: "",
       sort_order: 0,
-      image: null
+      image: null,
+      is_active: true
     })
     setError("")
   }
@@ -298,6 +293,16 @@ export default function AdminCategories() {
                   />
                 </div>
 
+                <div className="flex items-center gap-2">
+                  <input
+                    id="is_active"
+                    type="checkbox"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  />
+                  <Label htmlFor="is_active">Active</Label>
+                </div>
+
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
@@ -348,7 +353,7 @@ export default function AdminCategories() {
             ) : categories.length > 0 ? (
               <div className="space-y-4">
                 {categories.map((category) => (
-                  <div key={category._id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div key={category.id} className="flex items-center gap-4 p-4 border rounded-lg">
                     {/* Category Image */}
                     {category.image && (
                       <img
@@ -362,8 +367,8 @@ export default function AdminCategories() {
                       <h3 className="font-semibold text-lg">{category.name}</h3>
                       <p className="text-sm text-gray-600">{category.description}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant={category.isActive ? "default" : "secondary"}>
-                          {category.isActive ? "Active" : "Inactive"}
+                        <Badge variant={category.is_active ? "default" : "secondary"}>
+                          {category.is_active ? "Active" : "Inactive"}
                         </Badge>
                         <span className="text-sm text-gray-500">Sort: {category.sort_order}</span>
                       </div>
@@ -376,7 +381,7 @@ export default function AdminCategories() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(category._id)}
+                        onClick={() => handleDelete(category.id)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
