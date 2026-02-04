@@ -5,9 +5,38 @@ import { Toaster } from "@/components/ui/sonner"
 import './globals.css'
 
 export const metadata = {
-  title: 'Unik Toys - Premium Toy Collection',
-  description: 'Discover amazing toys at unbeatable prices. From educational toys to action figures, we have everything to spark your child\'s imagination.',
-  generator: 'v0.app'
+  metadataBase: new URL('https://uniktoys.pk'),
+  title: {
+    default: 'Unik Toys - Unique Online Toy Store in Pakistan',
+    template: '%s | Unik Toys',
+  },
+  description:
+    "Buy unique, high‑quality kids' toys online in Pakistan. Unik Toys offers educational toys, action figures, cars, dolls and more with fast nationwide delivery.",
+  generator: 'v0.app',
+  keywords: [
+    'unik toys',
+    'uniktoys',
+    'unique toys',
+    'unique toys pakistan',
+    'online toy store pakistan',
+    'kids toys pakistan',
+    'educational toys pakistan',
+    'action figures pakistan',
+    'toy cars',
+    'dolls and playsets',
+  ],
+  openGraph: {
+    title: 'Unik Toys - Unique Online Toy Store in Pakistan',
+    description:
+      "Shop unique toys for kids in Pakistan. Educational toys, action figures, cars, dolls and more with fast nationwide delivery.",
+    url: 'https://uniktoys.pk',
+    siteName: 'Unik Toys',
+    locale: 'en_PK',
+    type: 'website',
+  },
+  alternates: {
+    canonical: 'https://uniktoys.pk',
+  },
 }
 
 export default function RootLayout({ children }) {

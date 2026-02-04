@@ -3,6 +3,15 @@ import Footer from "@/components/layout/Footer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Heart, Award, Users, Truck, HeartHandshake } from "lucide-react"
 
+export const metadata = {
+  title: "About Unik Toys",
+  description:
+    "Learn about Unik Toys, a family‑owned online toy store in Pakistan focused on safe, educational and high‑quality toys at great prices.",
+  alternates: {
+    canonical: "/about",
+  },
+}
+
 export default function AboutPage() {
   const values = [
     {

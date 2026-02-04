@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Script from "next/script"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -39,6 +40,42 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Organization & WebSite structured data for better brand/branded search visibility */}
+      <Script
+        id="ld-json-organization"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'Unik Toys',
+            url: 'https://uniktoys.pk',
+            logo: 'https://uniktoys.pk/placeholder-logo.png',
+            sameAs: [
+              // Add your real social URLs when you have them
+            ],
+          }),
+        }}
+      />
+      <Script
+        id="ld-json-website"
+        type="application/ld+json"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'Unik Toys',
+            url: 'https://uniktoys.pk',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://uniktoys.pk/shop?search={search_term_string}',
+              'query-input': 'required name=search_term_string',
+            },
+          }),
+        }}
+      />
       <Header />
 
       {/* Hero Section */}

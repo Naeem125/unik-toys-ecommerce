@@ -64,7 +64,7 @@ export default function CartPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border rounded-lg">
                     <div className="relative w-20 h-20 flex-shrink-0">
                       <Image
                         src={item.image || "/placeholder.svg?height=80&width=80&query=toy"}
@@ -74,13 +74,13 @@ export default function CartPage() {
                       />
                     </div>
 
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{item.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg truncate">{item.name}</h3>
                       <p className="text-[#b88a44] font-bold">{formatPrice(item.price)}</p>
                       {item.stock < 10 && <p className="text-red-600 text-sm">Only {item.stock} left in stock</p>}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
                       <Button
                         variant="outline"
                         size="sm"
@@ -106,7 +106,7 @@ export default function CartPage() {
                       </Button>
                     </div>
 
-                    <div className="text-right">
+                    <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center gap-2 sm:gap-1">
                       <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
                       <Button
                         variant="ghost"
