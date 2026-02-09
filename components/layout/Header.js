@@ -64,7 +64,7 @@ export default function Header() {
         </div>
 
         {/* Main header */}
-        <div className="flex items-center justify-between py-6">
+        <div className="flex items-center justify-between py-6 gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center group">
             <div className="relative">
@@ -80,7 +80,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-4 xl:space-x-8">
             {userNavigation.map((item) => (
               <Link
                 key={item.name}
@@ -103,7 +103,7 @@ export default function Header() {
                   placeholder="Search toys..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-72 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:bg-white/30 focus:border-white/50 transition-all duration-200 backdrop-blur-sm"
+                  className="w-40 md:w-48 lg:w-72 pr-12 bg-white/20 border-white/30 text-white placeholder:text-white/70 focus:bg-white/30 focus:border-white/50 transition-all duration-200 backdrop-blur-sm"
                 />
                 <Button
                   type="submit"
@@ -194,7 +194,7 @@ export default function Header() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="md:hidden bg-white/20 border-white/30 text-white hover:border-white/50 transition-all duration-200 backdrop-blur-sm"
+                  className="lg:hidden bg-white/20 border-white/30 text-white hover:border-white/50 transition-all duration-200 backdrop-blur-sm"
                   style={{
                     backgroundColor: 'rgba(240, 233, 216, 0.1)',
                     borderColor: 'rgba(255, 255, 255, 0.3)'
