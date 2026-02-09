@@ -156,7 +156,7 @@ export default function ProductPage({ params }) {
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-gray-600 mb-4">{product.shortDescription}</p>
+              <p className="text-gray-600 mb-4">{product.short_description}</p>
 
               {/* Rating */}
               {product.rating?.count > 0 && (
