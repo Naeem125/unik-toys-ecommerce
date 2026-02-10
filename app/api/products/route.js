@@ -15,19 +15,25 @@ export async function GET(request) {
       category,
       search,
       featured: featured === "true",
-      sortBy,
-      limit
+      sortBy
     }
 
-    const products = await supabaseHelpers.getProducts(filters)
+    const { data: products, count } = await supabaseHelpers.getProducts({
+      ...filters,
+      page,
+      limit
+    })
+
+    const total = typeof count === "number" ? count : products.length
+    const pages = Math.max(1, Math.ceil(total / limit))
 
     return NextResponse.json({
       products,
       pagination: {
         page,
-        limit: products.length,
-        total: products.length,
-        pages: 1,
+        limit,
+        total,
+        pages
       },
     })
   } catch (error) {

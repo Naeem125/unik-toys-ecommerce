@@ -100,6 +100,26 @@ export default function ShopPage() {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
+  // Build a compact list of pages to display (with ellipsis)
+  const getVisiblePages = () => {
+    const total = pagination.pages
+    const current = pagination.page
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1)
+    }
+
+    const pages = new Set([1, total, current])
+
+    if (current - 1 > 1) pages.add(current - 1)
+    if (current + 1 < total) pages.add(current + 1)
+    if (current - 2 > 1) pages.add(current - 2)
+    if (current + 2 < total) pages.add(current + 2)
+
+    return Array.from(pages).sort((a, b) => a - b)
+  }
+
+  const visiblePages = getVisiblePages()
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -238,7 +258,7 @@ export default function ShopPage() {
         {/* Pagination */}
         {pagination.pages > 1 && (
           <div className="flex justify-center mt-12">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2">
               <Button
                 variant="outline"
                 disabled={pagination.page === 1}
@@ -246,15 +266,28 @@ export default function ShopPage() {
               >
                 Previous
               </Button>
-              {[...Array(pagination.pages)].map((_, i) => (
-                <Button
-                  key={i + 1}
-                  variant={pagination.page === i + 1 ? "default" : "outline"}
-                  onClick={() => handlePageChange(i + 1)}
-                >
-                  {i + 1}
-                </Button>
-              ))}
+              {visiblePages.map((page, index) => {
+                const prevPage = visiblePages[index - 1]
+                const showDots = prevPage && page - prevPage > 1
+
+                return (
+                  <div key={page} className="flex items-center gap-2">
+                    {showDots && (
+                      <span className="px-1 text-gray-400 text-sm select-none">
+                        …
+                      </span>
+                    )}
+                    <Button
+                      variant={pagination.page === page ? "default" : "outline"}
+                      size="icon"
+                      className="w-8 h-8 text-sm"
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </Button>
+                  </div>
+                )
+              })}
               <Button
                 variant="outline"
                 disabled={pagination.page === pagination.pages}

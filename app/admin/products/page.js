@@ -19,10 +19,16 @@ export default function AdminProducts() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
+
+  // Admin list filters
+  const [filterSearch, setFilterSearch] = useState("")
+  const [filterCategory, setFilterCategory] = useState("all")
+  const [filterFeatured, setFilterFeatured] = useState("all") // all | featured | regular
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,22 +48,40 @@ export default function AdminProducts() {
   })
 
   useEffect(() => {
-    fetchData()
+    fetchData({ initial: true })
   }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (overrides = {}) => {
     try {
+      if (overrides.initial) {
+        setInitialLoading(true)
+      } else {
+        setLoading(true)
+      }
+
+      const category = overrides.category ?? filterCategory
+      const search = overrides.search ?? filterSearch
+      const featured = overrides.featured ?? filterFeatured
+
       const [categoriesData, productsData] = await Promise.all([
-        supabaseHelpers.getCategories(),
-        supabaseHelpers.getProducts({})
+        categories.length ? Promise.resolve(categories) : supabaseHelpers.getCategories(),
+        supabaseHelpers.getProducts({
+          category,
+          search,
+          featured: featured === "featured",
+          sortBy: "newest"
+        })
       ])
-      setCategories(categoriesData)
+      if (!categories.length) {
+        setCategories(categoriesData)
+      }
       setProducts(productsData)
     } catch (error) {
       console.error("Error fetching data:", error)
       setError("Failed to load data")
     } finally {
       setLoading(false)
+      setInitialLoading(false)
     }
   }
 
@@ -247,10 +271,6 @@ export default function AdminProducts() {
   const getCategoryName = (categoryId) => {
     const category = categories.find(cat => cat.id === categoryId)
     return category ? category.name : "Unknown"
-  }
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
 
   return (
@@ -524,7 +544,86 @@ export default function AdminProducts() {
         {/* Products List */}
         <Card>
           <CardHeader>
-            <CardTitle>Products ({products.length})</CardTitle>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <CardTitle>Products ({products.length})</CardTitle>
+
+              <form
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  fetchData({
+                    category: filterCategory,
+                    search: filterSearch,
+                    featured: filterFeatured
+                  })
+                }}
+              >
+                <Input
+                  placeholder="Search by name or description..."
+                  value={filterSearch}
+                  onChange={(e) => setFilterSearch(e.target.value)}
+                  className="w-full sm:w-56"
+                />
+
+                <Select
+                  value={filterCategory}
+                  onValueChange={(value) => {
+                    setFilterCategory(value)
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-44">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.slug}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={filterFeatured}
+                  onValueChange={(value) => {
+                    setFilterFeatured(value)
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-40">
+                    <SelectValue placeholder="Featured filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All products</SelectItem>
+                    <SelectItem value="featured">Featured only</SelectItem>
+                    <SelectItem value="regular">Non-featured</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="submit"
+                    variant="outline"
+                    className="whitespace-nowrap"
+                  >
+                    Apply
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="whitespace-nowrap"
+                    onClick={() => {
+                      setFilterSearch("")
+                      setFilterCategory("all")
+                      setFilterFeatured("all")
+                      fetchData({ category: "all", search: "", featured: "all" })
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </form>
+            </div>
           </CardHeader>
           <CardContent>
             {loading ? (
