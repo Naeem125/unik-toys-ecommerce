@@ -340,11 +340,10 @@ export default function OrderDetailsPage({ params }) {
                   {history.map((entry, index) => (
                     <div key={entry.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          index === history.length - 1 
-                            ? 'bg-[#b88a44] text-white' 
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${index === history.length - 1
+                            ? 'bg-[#b88a44] text-white'
                             : 'bg-gray-200 text-gray-600'
-                        }`}>
+                          }`}>
                           {getStatusIcon(entry.status)}
                         </div>
                         {index < history.length - 1 && (
@@ -357,9 +356,15 @@ export default function OrderDetailsPage({ params }) {
                             {entry.status?.charAt(0).toUpperCase() + entry.status?.slice(1)}
                           </Badge>
                           <span className="text-xs text-gray-500">
-                            {entry.changed_by_type === 'superadmin' ? 'Updated by superadmin' : 
-                             entry.changed_by_type === 'admin' ? 'Updated by admin' : 
-                             entry.changed_by_type === 'user' ? 'Cancelled by you' : 'Updated'}
+                            {entry.changed_by_type === 'superadmin'
+                              ? 'Updated by superadmin'
+                              : entry.changed_by_type === 'admin'
+                                ? 'Updated by admin'
+                                : entry.changed_by_type === 'user' && entry.status === 'cancelled'
+                                  ? 'Cancelled by you'
+                                  : entry.changed_by_type === 'user'
+                                    ? 'Updated by you'
+                                    : 'Updated'}
                           </span>
                         </div>
                         {entry.tracking_number && (
@@ -490,7 +495,7 @@ export default function OrderDetailsPage({ params }) {
                     </Button>
                   )}
                   {order.status === "delivered" && (
-                    <Button 
+                    <Button
                       className="w-full bg-[#b88a44] hover:bg-orange-700"
                       onClick={handleReorder}
                       disabled={reordering}

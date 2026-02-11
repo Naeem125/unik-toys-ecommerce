@@ -1,10 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function BotpressIframe() {
     const [isOpen, setIsOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const pathname = usePathname();
+
+    // Hide chatbot on admin routes and auth pages (login/register)
+    if (
+        pathname?.startsWith('/admin') ||
+        pathname === '/login' ||
+        pathname === '/register'
+    ) {
+        return null;
+    }
 
     return (
         <>
@@ -12,8 +23,6 @@ export default function BotpressIframe() {
             <button
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
                 style={{
                     position: 'fixed',
                     bottom: 20,
@@ -34,10 +43,12 @@ export default function BotpressIframe() {
                 }}
                 aria-label={isOpen ? 'Close chat' : 'Open chat'}
                 onMouseEnter={(e) => {
+                    setIsHovered(true);
                     e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
                     e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,0,0,0.35)';
                 }}
                 onMouseLeave={(e) => {
+                    setIsHovered(false);
                     e.currentTarget.style.transform = 'translateY(0) scale(1)';
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
                 }}

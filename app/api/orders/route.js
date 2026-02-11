@@ -33,19 +33,6 @@ export const POST = requireAuth(async (request, { user }) => {
         }
 
         // Create initial history entry for order creation
-        await supabaseAdmin
-            .from("order_history")
-            .insert({
-                order_id: order.id,
-                status: "pending",
-                previous_status: null,
-                changed_by: user.id,
-                changed_by_type: 'user',
-                metadata: {
-                    action: 'order_created'
-                }
-            })
-
         const { error: historyError } = await supabaseAdmin
             .from("order_history")
             .insert({
