@@ -8,11 +8,11 @@ import './globals.css'
 export const metadata = {
   metadataBase: new URL('https://uniktoys.pk'),
   title: {
-    default: 'Unik Toys - Unique Online Toy Store in Pakistan',
+    default: 'Unik Toys – Die-Cast Cars Online Store in Pakistan | COD Available',
     template: '%s | Unik Toys',
   },
   description:
-    "Buy unique, high‑quality kids' toys online in Pakistan. Unik Toys offers educational toys, action figures, cars, dolls and more with fast nationwide delivery.",
+    "Unik Toys is your trusted online toy store in Pakistan. Explore die-cast cars, action figures, educational toys, and more with fast delivery and Cash on Delivery available nationwide.",
   generator: 'v0.app',
   keywords: [
     'unik toys',

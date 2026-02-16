@@ -23,6 +23,11 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false)
   const [phoneError, setPhoneError] = useState("")
 
+  const [shippingConfig, setShippingConfig] = useState({
+    freeShippingThreshold: 3000,
+    defaultShippingCost: 300,
+  })
+
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.user_metadata?.name || user?.name || "",
     email: user?.email || "",
@@ -34,10 +39,29 @@ export default function CheckoutPage() {
     phone: "",
   })
 
-  const shippingCost = cartTotal > 3000 ? 0 : 300
+  const shippingCost =
+    cartTotal >= shippingConfig.freeShippingThreshold
+      ? 0
+      : shippingConfig.defaultShippingCost
   const total = cartTotal + shippingCost
 
   useEffect(() => {
+    // Load shipping configuration
+    const loadShipping = async () => {
+      try {
+        const res = await fetch("/api/settings/shipping")
+        if (!res.ok) return
+        const data = await res.json()
+        setShippingConfig({
+          freeShippingThreshold: data.freeShippingThreshold ?? 3000,
+          defaultShippingCost: data.defaultShippingCost ?? 300,
+        })
+      } catch (err) {
+        console.error("Failed to load shipping settings", err)
+      }
+    }
+    loadShipping()
+
     if (!user) {
       router.push("/login?redirect=/checkout")
       return
@@ -102,6 +126,7 @@ export default function CheckoutPage() {
           total,
         }),
       })
+      console.log(orderResponse, "orderResponse")
 
       if (orderResponse.ok) {
         const orderData = await orderResponse.json()
@@ -113,8 +138,19 @@ export default function CheckoutPage() {
           router.push(`/dashboard/orders`)
         }, 2000)
       } else {
-        const errorData = await orderResponse.json()
-        setError(errorData.error || "Failed to create order")
+        const errorData = await orderResponse.json().catch(() => ({}))
+        console.log(errorData, "errorData")
+        // If server says unauthorized in status code or body, force login
+        if (
+          orderResponse.status === 401 ||
+          errorData?.error === "Unauthorized" ||
+          errorData?.error === "Unauthorized " // in case of extra space/variant
+        ) {
+          const redirect = encodeURIComponent("/checkout")
+          router.push(`/login?redirect=${redirect}`)
+        } else {
+          setError(errorData.error || "Failed to create order")
+        }
       }
     } catch (error) {
       console.error("Order creation error:", error)
@@ -338,9 +374,16 @@ export default function CheckoutPage() {
                     <span>Shipping:</span>
                     <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                   </div>
-                  {cartTotal <= 3000 && (
+                  {cartTotal < shippingConfig.freeShippingThreshold && (
                     <p className="text-sm text-[#b88a44]">
-                      Add {formatPrice(3000 - cartTotal + 1)} more for free shipping!
+                      Add{" "}
+                      {formatPrice(
+                        Math.max(
+                          0,
+                          shippingConfig.freeShippingThreshold - cartTotal + 1
+                        )
+                      )}{" "}
+                      more for free shipping!
                     </p>
                   )}
                   <div className="flex justify-between text-lg font-bold border-t pt-2">

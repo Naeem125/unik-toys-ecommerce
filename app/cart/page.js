@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,11 @@ export default function CartPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
 
+  const [shippingConfig, setShippingConfig] = useState({
+    freeShippingThreshold: 3000,
+    defaultShippingCost: 300,
+  })
+
   const handleQuantityChange = (productId, newQuantity) => {
     if (newQuantity < 1) {
       removeFromCart(productId)
@@ -26,7 +31,27 @@ export default function CartPage() {
     }
   }
 
-  const shippingCost = cartTotal > 3000 ? 0 : 300
+  useEffect(() => {
+    const loadShipping = async () => {
+      try {
+        const res = await fetch("/api/settings/shipping")
+        if (!res.ok) return
+        const data = await res.json()
+        setShippingConfig({
+          freeShippingThreshold: data.freeShippingThreshold ?? 3000,
+          defaultShippingCost: data.defaultShippingCost ?? 300,
+        })
+      } catch (err) {
+        console.error("Failed to load shipping settings", err)
+      }
+    }
+    loadShipping()
+  }, [])
+
+  const shippingCost =
+    cartTotal >= shippingConfig.freeShippingThreshold
+      ? 0
+      : shippingConfig.defaultShippingCost
   const total = cartTotal + shippingCost
 
   if (cart.length === 0) {
@@ -138,8 +163,17 @@ export default function CartPage() {
                   <span>Shipping:</span>
                   <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
                 </div>
-                {cartTotal <= 3000 && (
-                  <p className="text-sm text-[#b88a44]">Add {formatPrice(3000 - cartTotal + 1)} more for free shipping!</p>
+                {cartTotal < shippingConfig.freeShippingThreshold && (
+                  <p className="text-sm text-[#b88a44]">
+                    Add{" "}
+                    {formatPrice(
+                      Math.max(
+                        0,
+                        shippingConfig.freeShippingThreshold - cartTotal + 1
+                      )
+                    )}{" "}
+                    more for free shipping!
+                  </p>
                 )}
                 <div className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,7 @@ import { Settings, Store, Truck, DollarSign, Mail, Save } from "lucide-react"
 export default function AdminSettingsPage() {
     const [saving, setSaving] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [error, setError] = useState("")
 
     // Site Settings
     const [siteSettings, setSiteSettings] = useState({
@@ -25,9 +26,9 @@ export default function AdminSettingsPage() {
 
     // Shipping Settings
     const [shippingSettings, setShippingSettings] = useState({
-        freeShippingThreshold: 50,
-        defaultShippingCost: 9.99,
-        shippingMessage: "Free shipping on orders over PKR 50!",
+        freeShippingThreshold: 3000,
+        defaultShippingCost: 300,
+        shippingMessage: "Free shipping on orders over Rs 3000!",
     })
 
     // Tax Settings
@@ -48,19 +49,51 @@ export default function AdminSettingsPage() {
         setTaxSettings(prev => ({ ...prev, [field]: value }))
     }
 
+    useEffect(() => {
+        const loadShippingSettings = async () => {
+            try {
+                const res = await fetch("/api/admin/settings/shipping")
+                if (!res.ok) return
+                const data = await res.json()
+                setShippingSettings({
+                    freeShippingThreshold: data.freeShippingThreshold ?? 3000,
+                    defaultShippingCost: data.defaultShippingCost ?? 300,
+                    shippingMessage: data.shippingMessage || "Free shipping on orders over Rs 3000!",
+                })
+            } catch (err) {
+                console.error("Failed to load shipping settings", err)
+            }
+        }
+        loadShippingSettings()
+    }, [])
+
     const handleSave = async () => {
         setSaving(true)
         setSuccess(false)
+        setError("")
 
         try {
-            // Simulate saving to database
-            // In a real app, you would save to Supabase or a settings table
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const res = await fetch("/api/admin/settings/shipping", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    freeShippingThreshold: Number(shippingSettings.freeShippingThreshold) || 0,
+                    defaultShippingCost: Number(shippingSettings.defaultShippingCost) || 0,
+                    shippingMessage: shippingSettings.shippingMessage || "",
+                }),
+            })
 
-            setSuccess(true)
-            setTimeout(() => setSuccess(false), 3000)
+            const data = await res.json().catch(() => ({}))
+
+            if (!res.ok) {
+                setError(data.error || "Failed to save shipping settings")
+            } else {
+                setSuccess(true)
+                setTimeout(() => setSuccess(false), 3000)
+            }
         } catch (error) {
             console.error("Error saving settings:", error)
+            setError("Failed to save settings")
         } finally {
             setSaving(false)
         }
@@ -75,19 +108,16 @@ export default function AdminSettingsPage() {
                         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
                         <p className="text-gray-600">Manage your store settings and configuration</p>
                     </div>
-                    <Button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="bg-[#b88a44] hover:bg-orange-700"
-                    >
-                        <Save className="h-4 w-4 mr-2" />
-                        {saving ? "Saving..." : "Save Changes"}
-                    </Button>
                 </div>
 
                 {success && (
                     <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
                         ✅ Settings saved successfully!
+                    </div>
+                )}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                        {error}
                     </div>
                 )}
 
@@ -216,8 +246,8 @@ export default function AdminSettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Tax Settings */}
-                <Card className="py-2">
+                {/* Tax Settings - these are not used in the app */}
+                {/* <Card className="py-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5" />
@@ -253,10 +283,10 @@ export default function AdminSettingsPage() {
                             </div>
                         )}
                     </CardContent>
-                </Card>
+                </Card> */}
 
-                {/* Email Settings */}
-                <Card className="py-2">
+                {/* Email Settings - these are not used in the app */}
+                {/* <Card className="py-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Mail className="h-5 w-5" />
@@ -295,7 +325,7 @@ export default function AdminSettingsPage() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Save Button (Bottom) */}
                 <div className="flex justify-end">

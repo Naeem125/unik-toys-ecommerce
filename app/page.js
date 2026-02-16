@@ -84,11 +84,14 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 text-balance">
-                Discover Amazing Toys at <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600">Unbeatable Prices</span>
+                Premium Diecast Cars at{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600">
+                  Unbeatable Prices
+                </span>
               </h1>
               <p className="text-xl text-gray-700 mb-8 text-pretty">
-                From educational toys to action figures, we have everything to spark your child's imagination.
-                Guaranteed lowest prices with free shipping on orders over {formatPrice(50)}!
+                From classic JDM legends to modern supercars and bikes, explore high‑detail diecast models for collectors and kids alike.
+                Perfect for display, gifting, and racing fun – with free shipping on qualifying orders!
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="text-white shadow-lg " style={{ backgroundColor: '#b88a49' }}>
@@ -107,13 +110,13 @@ export default function HomePage() {
             </div>
             <div className="relative">
               <Image
-                src="/colorful-toy-collection-display.jpg"
+                src="/home-page-car.avif"
                 alt="Unik Toys Collection"
                 width={600}
                 height={500}
                 className="rounded-lg shadow-2xl"
               />
-              <div className="absolute -inset-4 bg-gradient-to-r from-amber-400/20 to-yellow-400/20 rounded-lg blur-xl"></div>
+              {/* <div className="absolute -inset-4 bg-gradient-to-r from-amber-400/20 to-yellow-400/20 rounded-lg blur-xl"></div> */}
             </div>
           </div>
         </div>
@@ -167,7 +170,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
+              {featuredProducts?.length > 0 && featuredProducts?.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

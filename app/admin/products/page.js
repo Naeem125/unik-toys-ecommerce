@@ -15,6 +15,22 @@ import { supabase, supabaseHelpers } from "@/lib/supabase"
 import { Plus, Edit, Trash2, X } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
 
+const BASIC_COLORS = [
+  "Red",
+  "Blue",
+  "Green",
+  "Yellow",
+  "Black",
+  "White",
+  "Gray",
+  "Silver",
+  "Gold",
+  "Orange",
+  "Purple",
+  "Pink",
+  "Brown",
+]
+
 export default function AdminProducts() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
@@ -39,13 +55,15 @@ export default function AdminProducts() {
     category_id: "",
     stock: "",
     sku: "",
-    weight: "",
-    weight_unit: "kg",
-    dimensions: { length: "", width: "", height: "" },
+    weight: "300",
+    weight_unit: "g",
+    dimensions: { length: "23", width: "7", height: "7" },
     tags: "",
     is_featured: false,
     images: []
   })
+  const [selectedColors, setSelectedColors] = useState([])
+  const [customColors, setCustomColors] = useState("")
 
   useEffect(() => {
     fetchData({ initial: true })
@@ -178,6 +196,14 @@ export default function AdminProducts() {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
+      const combinedColors = [
+        ...selectedColors,
+        ...customColors
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      ]
+
       const productData = {
         ...formData,
         slug,
@@ -192,6 +218,7 @@ export default function AdminProducts() {
           height: parseFloat(formData.dimensions.height) || null
         },
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        colors: combinedColors.length ? combinedColors : [],
         images: uploadedImages
       }
 
@@ -215,6 +242,12 @@ export default function AdminProducts() {
   const handleEdit = (product) => {
     const images = (product.images || []).map(img => ({ url: img.url }))
 
+    const productColors = product.colors || []
+    setSelectedColors(productColors.filter((c) => BASIC_COLORS.includes(c)))
+    setCustomColors(
+      productColors.filter((c) => !BASIC_COLORS.includes(c)).join(", ")
+    )
+
     setEditingProduct(product)
     setFormData({
       name: product.name || "",
@@ -226,7 +259,7 @@ export default function AdminProducts() {
       stock: product.stock || "",
       sku: product.sku || "",
       weight: product.weight || "",
-      weight_unit: product.weight_unit || "kg",
+      weight_unit: product.weight_unit || "g",
       dimensions: product.dimensions || { length: "", width: "", height: "" },
       tags: product.tags ? product.tags.join(', ') : "",
       is_featured: product.is_featured || false,
@@ -258,13 +291,15 @@ export default function AdminProducts() {
       category_id: "",
       stock: "",
       sku: "",
-      weight: "",
-      weight_unit: "kg",
-      dimensions: { length: "", width: "", height: "" },
+      weight: "300",
+      weight_unit: "g",
+      dimensions: { length: "23", width: "7", height: "7" },
       tags: "",
       is_featured: false,
       images: []
     })
+    setSelectedColors([])
+    setCustomColors("")
     setError("")
   }
 
@@ -405,6 +440,43 @@ export default function AdminProducts() {
                     value={formData.tags}
                     onChange={handleInputChange}
                     placeholder="tag1, tag2, tag3"
+                  />
+                </div>
+
+                {/* Colors */}
+                <div>
+                  <Label className="mb-2 block">Colors</Label>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {BASIC_COLORS.map((color) => (
+                      <label
+                        key={color}
+                        className="flex items-center gap-1 text-sm text-gray-700 border rounded-full px-3 py-1 bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="rounded"
+                          checked={selectedColors.includes(color)}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            setSelectedColors((prev) =>
+                              checked
+                                ? [...prev, color]
+                                : prev.filter((c) => c !== color)
+                            )
+                          }}
+                        />
+                        <span>{color}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <Label htmlFor="custom_colors" className="text-sm text-gray-700">
+                    Custom colors (comma separated)
+                  </Label>
+                  <Input
+                    id="custom_colors"
+                    value={customColors}
+                    onChange={(e) => setCustomColors(e.target.value)}
+                    placeholder="e.g. Metallic blue, Neon green"
                   />
                 </div>
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,24 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("")
   const { user, logout } = useAuth()
   const { cart, cartItemCount } = useCart()
+  const [shippingMessage, setShippingMessage] = useState("Free shipping on orders over Rs 3000!")
+
+  useEffect(() => {
+    const loadShipping = async () => {
+      try {
+        const res = await fetch("/api/settings/shipping")
+        if (!res.ok) return
+        const data = await res.json()
+        setShippingMessage(
+          data.shippingMessage ||
+          `Free shipping on orders over Rs ${data.freeShippingThreshold || 3000}!`
+        )
+      } catch (err) {
+        console.error("Failed to load shipping settings", err)
+      }
+    }
+    loadShipping()
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -46,7 +64,7 @@ export default function Header() {
         <div className="flex items-center justify-between py-3 px-4 rounded-lg text-sm text-white border-b border-white/20" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="font-medium">Free shipping on orders over {formatPrice(50)}!</span>
+            <span className="font-medium">{shippingMessage}</span>
           </div>
           <div className="flex items-center gap-4">
             {!user && (
@@ -69,7 +87,7 @@ export default function Header() {
           <Link href="/" className="flex items-center group">
             <div className="relative">
               <Image
-                src="/images/logo.png"
+                src="/images/logo-1.jpeg"
                 alt="Unik Toys"
                 width={160}
                 height={80}

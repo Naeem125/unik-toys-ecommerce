@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <Image src="/images/logo.png" alt="Unique Toys" width={120} height={60} className="h-12 w-auto mb-4" />
+            <Image src="/images/logo-1.jpeg" alt="Unique Toys" width={120} height={60} className="h-12 w-auto mb-4" />
             <p className="text-gray-300 mb-4">
               Your trusted partner for quality toys that inspire creativity and learning. Guaranteed lowest prices on
               all our products.

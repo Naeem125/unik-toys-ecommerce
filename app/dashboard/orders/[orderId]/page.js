@@ -341,8 +341,8 @@ export default function OrderDetailsPage({ params }) {
                     <div key={entry.id} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${index === history.length - 1
-                            ? 'bg-[#b88a44] text-white'
-                            : 'bg-gray-200 text-gray-600'
+                          ? 'bg-[#b88a44] text-white'
+                          : 'bg-gray-200 text-gray-600'
                           }`}>
                           {getStatusIcon(entry.status)}
                         </div>
@@ -411,6 +411,9 @@ export default function OrderDetailsPage({ params }) {
                         <p className="text-sm text-gray-600">
                           {formatPrice(item.price)} × {item.quantity}
                         </p>
+                        {item.color && (
+                          <p className="text-xs text-gray-500 mt-0.5">Color: {item.color}</p>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gray-900">

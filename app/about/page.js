@@ -49,15 +49,16 @@ export default function AboutPage() {
 
   const team = [
     {
-      name: "Bilal Amin",
-      role: "Founder & CEO",
-      description: "Leads company vision, strategy, and overall growth.",
+      name: "Naeem Amin",
+      role: "Founder",
+      description: "Entrepreneur and Founder of Unik Toys, focused on quality and customer trust.",
     },
     {
-      name: "Naeem Amin",
-      role: "Head of Product",
-      description: "Oversees product direction, development, and user experience.",
+      name: "Bilal Amin",
+      role: "CEO",
+      description: "Leads company vision, strategy, and overall growth.",
     }
+
     // {
     //   name: "Lisa Rodriguez",
     //   role: "Customer Experience",

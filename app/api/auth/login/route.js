@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
-import { supabaseHelpers } from "@/lib/supabase"
+import { cookies } from "next/headers"
+import { createServerClient } from "@supabase/auth-helpers-nextjs"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export async function POST(request) {
   try {
@@ -10,11 +14,37 @@ export async function POST(request) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    // Sign in user with Supabase
-    const data = await supabaseHelpers.signInUser(email, password)
+    const cookieStore = cookies()
+    // Collect cookie changes here so we can apply them to the response after sign-in
+    let cookieChanges = []
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll().map((cookie) => ({
+            name: cookie.name,
+            value: cookie.value,
+          }))
+        },
+        setAll(cookiesToSet) {
+          cookieChanges = cookiesToSet
+        },
+      },
+    })
+
+    // Sign in user with Supabase on the server so auth cookies get set
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      throw error
+    }
+
     const { user, session } = data
 
-    // Create response with session token in cookie
+    // Create response with user + session for client-side Supabase
     const response = NextResponse.json({
       message: "Login successful",
       user: {
@@ -29,14 +59,10 @@ export async function POST(request) {
       }
     })
 
-    if (session?.access_token) {
-      response.cookies.set("supabase-access-token", session.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60, // 7 days
-      })
-    }
+    // Apply Supabase-managed auth cookies to the response
+    cookieChanges.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options)
+    })
 
     return response
   } catch (error) {
@@ -53,9 +79,9 @@ export async function POST(request) {
 
     // Handle network/DNS errors
     const isNetworkError = error?.code === 'ENOTFOUND' ||
-                          error?.cause?.code === 'ENOTFOUND' ||
-                          error?.message?.includes('fetch failed') ||
-                          error?.message?.includes('getaddrinfo')
+      error?.cause?.code === 'ENOTFOUND' ||
+      error?.message?.includes('fetch failed') ||
+      error?.message?.includes('getaddrinfo')
 
     if (isNetworkError || (error?.__isAuthError && error?.status === 0)) {
       return NextResponse.json(

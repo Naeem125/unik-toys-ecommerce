@@ -236,9 +236,8 @@ export default function AdminOrderDetailPage({ params }) {
                                         {history.map((entry, index) => (
                                             <div key={entry.id} className="flex gap-4">
                                                 <div className="flex flex-col items-center">
-                                                    <div className={`w-3 h-3 rounded-full ${
-                                                        index === history.length - 1 ? 'bg-[#b88a44]' : 'bg-gray-300'
-                                                    }`} />
+                                                    <div className={`w-3 h-3 rounded-full ${index === history.length - 1 ? 'bg-[#b88a44]' : 'bg-gray-300'
+                                                        }`} />
                                                     {index < history.length - 1 && (
                                                         <div className="w-0.5 h-full bg-gray-200 mt-1" />
                                                     )}
@@ -249,9 +248,9 @@ export default function AdminOrderDetailPage({ params }) {
                                                             {entry.status?.charAt(0).toUpperCase() + entry.status?.slice(1)}
                                                         </Badge>
                                                         <span className="text-xs text-gray-500">
-                                                            {entry.changed_by_type === 'superadmin' ? 'Superadmin' : 
-                                                             entry.changed_by_type === 'admin' ? 'Admin' : 
-                                                             entry.changed_by_type === 'user' ? 'User' : 'Unknown'}
+                                                            {entry.changed_by_type === 'superadmin' ? 'Superadmin' :
+                                                                entry.changed_by_type === 'admin' ? 'Admin' :
+                                                                    entry.changed_by_type === 'user' ? 'User' : 'Unknown'}
                                                         </span>
                                                     </div>
                                                     {entry.tracking_number && (
@@ -307,7 +306,7 @@ export default function AdminOrderDetailPage({ params }) {
                                         <MapPin className="h-5 w-5" />
                                         Shipping Address
                                     </CardTitle>
-                            </CardHeader>
+                                </CardHeader>
                                 <CardContent className="text-sm space-y-1">
                                     <p className="font-medium">{order.shipping_address.name}</p>
                                     <p>{order.shipping_address.street}</p>
@@ -332,12 +331,35 @@ export default function AdminOrderDetailPage({ params }) {
                             <CardContent>
                                 <div className="space-y-3">
                                     {order.items?.map((item, index) => (
-                                        <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
-                                            <div>
-                                                <p className="font-medium text-sm">{item.name}</p>
-                                                <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                                        <div
+                                            key={index}
+                                            className="flex items-center gap-4 py-3 border-b last:border-0"
+                                        >
+                                            <div className="relative w-16 h-16 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-gray-200">
+                                                <img
+                                                    src={item.image || "/placeholder.svg?height=64&width=64&query=toy"}
+                                                    alt={item.name || "Product"}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
-                                            <p className="font-semibold text-sm">{formatPrice(item.price * item.quantity)}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm text-gray-900 truncate">
+                                                    {item.name}
+                                                </p>
+                                                <p className="text-xs text-gray-600">
+                                                    Unit: {formatPrice(item.price)} • Qty: {item.quantity}
+                                                </p>
+                                                {item.color && (
+                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                                        Color: {item.color}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-semibold text-sm text-gray-900">
+                                                    {formatPrice((item.price || 0) * (item.quantity || 0))}
+                                                </p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

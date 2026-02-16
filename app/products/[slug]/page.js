@@ -11,8 +11,9 @@ import Header from "@/components/layout/Header"
 import Footer from "@/components/layout/Footer"
 import ProductCard from "@/components/products/ProductCard"
 import { useCart } from "@/contexts/CartContext"
-import { Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw } from "lucide-react"
+import { Star, ShoppingCart, Truck, RotateCcw } from "lucide-react"
 import { formatPrice } from "@/lib/utils"
+import { toast } from "sonner"
 
 export default function ProductPage({ params }) {
   const router = useRouter()
@@ -22,17 +23,42 @@ export default function ProductPage({ params }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [selectedColor, setSelectedColor] = useState(null)
+  const [adding, setAdding] = useState(false)
+  const [shippingConfig, setShippingConfig] = useState({
+    freeShippingThreshold: 3000,
+  })
 
   useEffect(() => {
     fetchProduct()
+
+    const loadShipping = async () => {
+      try {
+        const res = await fetch("/api/settings/shipping")
+        if (!res.ok) return
+        const data = await res.json()
+        setShippingConfig({
+          freeShippingThreshold: data.freeShippingThreshold ?? 3000,
+        })
+      } catch (err) {
+        console.error("Failed to load shipping settings", err)
+      }
+    }
+    loadShipping()
   }, [params.slug])
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${params.slug}`)
+      const response = await fetch(`/api/products/${params.slug}?t=${Date.now()}`, {
+        cache: "no-store",
+      })
       if (response.ok) {
         const data = await response.json()
         setProduct(data.product)
+
+        if (data.product.colors && data.product.colors.length > 0) {
+          setSelectedColor(data.product.colors[0])
+        }
 
         // Fetch related products
         if (data.product.category) {
@@ -53,9 +79,21 @@ export default function ProductPage({ params }) {
   }
 
   const handleAddToCart = () => {
-    if (product) {
-      addToCart(product, quantity)
+    if (!product || product.stock === 0 || adding) return
+
+    setAdding(true)
+    const productWithColor = {
+      ...product,
+      selectedColor,
     }
+    addToCart(productWithColor, quantity)
+    toast.success(
+      `Added "${product.name}"${selectedColor ? ` (${selectedColor})` : ""} to your cart`
+    )
+
+    setTimeout(() => {
+      setAdding(false)
+    }, 1200)
   }
 
   const discountPercentage = product?.comparePrice
@@ -115,12 +153,12 @@ export default function ProductPage({ params }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
           {/* Product Images - Left Section with Background */}
           <div className="bg-gray-50 p-2 rounded-2xl">
-            <div className="relative aspect-square mb-4 overflow-hidden rounded-xl bg-white shadow-md">
+            <div className="relative aspect-[4/3] max-h-[360px] mb-4 overflow-hidden rounded-xl bg-white shadow-md">
               <Image
                 src={product.images?.[selectedImage]?.url || "/placeholder.svg?height=600&width=600&query=toy"}
                 alt={product.images?.[selectedImage]?.alt || product.name}
                 fill
-                className="object-cover"
+                className="object-contain"
               />
               {product.isFeatured && <Badge className="absolute top-4 left-4 bg-[#b88a44]">Featured</Badge>}
               {discountPercentage > 0 && (
@@ -185,6 +223,31 @@ export default function ProductPage({ params }) {
                 {discountPercentage > 0 && <Badge variant="destructive">Save {discountPercentage}%</Badge>}
               </div>
 
+              {/* Colors */}
+              {product.colors && product.colors.length > 0 && (
+                <div className="mb-6">
+                  <span className="text-sm font-medium text-gray-700 mr-2">Choose color:</span>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {product.colors.map((color) => {
+                      const isActive = selectedColor === color
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setSelectedColor(color)}
+                          className={`px-3 py-1 rounded-full border text-xs font-medium transition-colors ${isActive
+                            ? "bg-[#b88a44] text-white border-[#b88a44]"
+                            : "bg-gray-50 text-gray-700 border-gray-200 hover:border-[#b88a44]"
+                            }`}
+                        >
+                          {color}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Stock Status */}
               <div className="mb-6">
                 {product.stock > 0 ? (
@@ -223,48 +286,32 @@ export default function ProductPage({ params }) {
                 </div>
                 <Button
                   onClick={handleAddToCart}
-                  disabled={product.stock === 0}
+                  disabled={product.stock === 0 || adding}
                   className="flex-1 bg-[#b88a44] hover:bg-orange-700"
                   size="lg"
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
-                  {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-                </Button>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Add to Wishlist
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
+                  {product.stock === 0 ? "Out of Stock" : adding ? "Added!" : "Add to Cart"}
                 </Button>
               </div>
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 mt-4">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <Truck className="h-5 w-5 text-[#b88a44]" />
                 <div>
                   <p className="font-medium text-sm">Free Shipping</p>
-                  <p className="text-xs text-gray-600">On orders over {formatPrice(50)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Shield className="h-5 w-5 text-[#b88a44]" />
-                <div>
-                  <p className="font-medium text-sm">Safety Tested</p>
-                  <p className="text-xs text-gray-600">CPSC compliant</p>
+                  <p className="text-xs text-gray-600">
+                    On orders over {formatPrice(shippingConfig.freeShippingThreshold)}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <RotateCcw className="h-5 w-5 text-[#b88a44]" />
                 <div>
-                  <p className="font-medium text-sm">30-Day Returns</p>
-                  <p className="text-xs text-gray-600">Easy returns</p>
+                  <p className="font-medium text-sm">15-Day Returns</p>
+                  <p className="text-xs text-gray-600">Easy 15-day returns</p>
                 </div>
               </div>
             </div>
