@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { supabaseHelpers } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
@@ -24,9 +24,27 @@ function normalizeProduct(p) {
   return normalized
 }
 
-export async function GET(request, { params }) {
+export async function GET(_request, { params }) {
   try {
-    const product = normalizeProduct(await supabaseHelpers.getProductBySlug(params.slug))
+    const { data, error } = await supabase
+      .from("products")
+      .select(
+        `
+        *,
+        categories (
+          id,
+          name,
+          slug,
+          image
+        )
+      `
+      )
+      .eq("id", params.id)
+      .single()
+
+    if (error) throw error
+
+    const product = normalizeProduct(data)
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
@@ -41,7 +59,9 @@ export async function GET(request, { params }) {
       }
     )
   } catch (error) {
-    console.error("Get product error:", error)
+    console.error("Get product by id error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
+

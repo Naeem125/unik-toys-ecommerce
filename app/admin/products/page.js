@@ -49,7 +49,7 @@ export default function AdminProducts() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    short_description: "",
+    features: "",
     price: "",
     compare_price: "",
     category_id: "",
@@ -58,7 +58,6 @@ export default function AdminProducts() {
     weight: "300",
     weight_unit: "g",
     dimensions: { length: "23", width: "7", height: "7" },
-    tags: "",
     is_featured: false,
     images: []
   })
@@ -132,7 +131,8 @@ export default function AdminProducts() {
 
     setFormData(prev => ({
       ...prev,
-      images: [...prev.images, ...newImages]
+      // Put newly added images first so the storefront shows the latest image by default
+      images: [...newImages, ...prev.images]
     }))
 
     e.target.value = null
@@ -180,7 +180,11 @@ export default function AdminProducts() {
       uploadedImages.push({ url: publicUrlData.publicUrl, alt: "" })
     }
 
-    return uploadedImages
+    // Ensure a single primary image: the first image is primary
+    return uploadedImages.map((img, idx) => ({
+      ...img,
+      isPrimary: idx === 0,
+    }))
   }
 
   const handleSubmit = async (e) => {
@@ -191,11 +195,6 @@ export default function AdminProducts() {
     try {
       const uploadedImages = await uploadImages()
 
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-
       const combinedColors = [
         ...selectedColors,
         ...customColors
@@ -204,9 +203,16 @@ export default function AdminProducts() {
           .filter(Boolean),
       ]
 
+      const featuresArray = formData.features
+        .split("\n")
+        .map((feature) => feature.trim())
+        .filter(Boolean)
+
+      // Exclude `features` from data sent to Supabase (no features column in DB)
+      const { features, ...formWithoutFeatures } = formData
+
       const productData = {
-        ...formData,
-        slug,
+        ...formWithoutFeatures,
         price: parseFloat(formData.price),
         compare_price: formData.compare_price ? parseFloat(formData.compare_price) : null,
         stock: parseInt(formData.stock),
@@ -217,15 +223,21 @@ export default function AdminProducts() {
           width: parseFloat(formData.dimensions.width) || null,
           height: parseFloat(formData.dimensions.height) || null
         },
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
+        // Store features in the existing tags column (treated as features)
+        tags: featuresArray,
         colors: combinedColors.length ? combinedColors : [],
         images: uploadedImages
       }
 
       if (editingProduct) {
+        // IMPORTANT: don't change slug on update; otherwise user URLs break / look "stale"
         await supabaseHelpers.updateProduct(editingProduct.id, productData)
       } else {
-        await supabaseHelpers.createProduct(productData)
+        const slug = formData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '')
+        await supabaseHelpers.createProduct({ ...productData, slug })
       }
 
       setIsDialogOpen(false)
@@ -252,7 +264,8 @@ export default function AdminProducts() {
     setFormData({
       name: product.name || "",
       description: product.description || "",
-      short_description: product.short_description || "",
+      // Map existing tags (features) into a multiline textarea, one per line
+      features: product.tags ? product.tags.join("\n") : "",
       price: product.price || "",
       compare_price: product.compare_price || "",
       category_id: product.category_id || "",
@@ -261,7 +274,6 @@ export default function AdminProducts() {
       weight: product.weight || "",
       weight_unit: product.weight_unit || "g",
       dimensions: product.dimensions || { length: "", width: "", height: "" },
-      tags: product.tags ? product.tags.join(', ') : "",
       is_featured: product.is_featured || false,
       images
     })
@@ -285,7 +297,7 @@ export default function AdminProducts() {
     setFormData({
       name: "",
       description: "",
-      short_description: "",
+      features: "",
       price: "",
       compare_price: "",
       category_id: "",
@@ -294,7 +306,6 @@ export default function AdminProducts() {
       weight: "300",
       weight_unit: "g",
       dimensions: { length: "23", width: "7", height: "7" },
-      tags: "",
       is_featured: false,
       images: []
     })
@@ -370,12 +381,14 @@ export default function AdminProducts() {
                 </div>
 
                 <div>
-                  <Label htmlFor="short_description">Short Description</Label>
-                  <Input
-                    id="short_description"
-                    name="short_description"
-                    value={formData.short_description}
+                  <Label htmlFor="features">Features (one per line)</Label>
+                  <Textarea
+                    id="features"
+                    name="features"
+                    value={formData.features}
                     onChange={handleInputChange}
+                    placeholder={"e.g.\nHigh-quality, child-safe materials\nIncludes multiple interchangeable accessories\nIdeal gift for ages 4 and up"}
+                    rows={4}
                   />
                 </div>
 
@@ -430,17 +443,6 @@ export default function AdminProducts() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="tags">Tags (comma separated)</Label>
-                  <Input
-                    id="tags"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleInputChange}
-                    placeholder="tag1, tag2, tag3"
-                  />
                 </div>
 
                 {/* Colors */}
@@ -723,7 +725,11 @@ export default function AdminProducts() {
                     )}
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-sm text-gray-600">{product.short_description}</p>
+                      {product.tags && product.tags.length > 0 && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {product.tags.join(" • ")}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1">
                         <Badge variant="secondary">{formatPrice(product.price)}</Badge>
                         <Badge variant={product.stock > 0 ? "default" : "destructive"}>

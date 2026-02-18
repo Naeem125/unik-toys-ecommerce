@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import { toast } from "sonner"
 
 export default function ProductPage({ params }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { addToCart } = useCart()
   const [product, setProduct] = useState(null)
   const [relatedProducts, setRelatedProducts] = useState([])
@@ -30,6 +31,7 @@ export default function ProductPage({ params }) {
   })
 
   useEffect(() => {
+    setLoading(true)
     fetchProduct()
 
     const loadShipping = async () => {
@@ -45,27 +47,55 @@ export default function ProductPage({ params }) {
       }
     }
     loadShipping()
-  }, [params.slug])
+
+    // If admin updates product in another tab, refetch when the user returns
+    const onFocus = () => {
+      setLoading(true)
+      fetchProduct()
+    }
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        setLoading(true)
+        fetchProduct()
+      }
+    }
+    window.addEventListener("focus", onFocus)
+    document.addEventListener("visibilitychange", onVisibility)
+
+    return () => {
+      window.removeEventListener("focus", onFocus)
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
+  }, [params.slug, searchParams])
 
   const fetchProduct = async () => {
     try {
-      const response = await fetch(`/api/products/${params.slug}?t=${Date.now()}`, {
-        cache: "no-store",
-      })
+      const id = searchParams.get("id")
+      const url = id
+        ? `/api/products/by-id/${id}?t=${Date.now()}`
+        : `/api/products/${params.slug}?t=${Date.now()}`
+
+      const response = await fetch(url, { cache: "no-store" })
       if (response.ok) {
         const data = await response.json()
         setProduct(data.product)
+        setSelectedImage(0)
 
         if (data.product.colors && data.product.colors.length > 0) {
           setSelectedColor(data.product.colors[0])
         }
 
-        // Fetch related products
-        if (data.product.category) {
-          const relatedResponse = await fetch(`/api/products?category=${data.product.category.slug}&limit=4`)
+        // Fetch related products - Supabase returns `categories` relation
+        if (data.product.categories) {
+          const relatedResponse = await fetch(
+            `/api/products?category=${data.product.categories.slug}&limit=4&t=${Date.now()}`,
+            { cache: "no-store" }
+          )
           if (relatedResponse.ok) {
             const relatedData = await relatedResponse.json()
-            setRelatedProducts(relatedData.products.filter((p) => p._id !== data.product._id))
+            setRelatedProducts(
+              (relatedData.products || []).filter((p) => (p.id ?? p._id) !== (data.product.id ?? data.product._id))
+            )
           }
         }
       } else if (response.status === 404) {
@@ -96,8 +126,12 @@ export default function ProductPage({ params }) {
     }, 1200)
   }
 
-  const discountPercentage = product?.comparePrice
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+  // Supabase uses snake_case fields; fall back to camelCase for any legacy data
+  const comparePrice = product?.compare_price ?? product?.comparePrice
+  const isFeatured = product?.is_featured ?? product?.isFeatured
+
+  const discountPercentage = comparePrice
+    ? Math.round(((comparePrice - product.price) / comparePrice) * 100)
     : 0
 
   if (loading) {
@@ -160,7 +194,7 @@ export default function ProductPage({ params }) {
                 fill
                 className="object-contain"
               />
-              {product.isFeatured && <Badge className="absolute top-4 left-4 bg-[#b88a44]">Featured</Badge>}
+              {isFeatured && <Badge className="absolute top-4 left-4 bg-[#b88a44]">Featured</Badge>}
               {discountPercentage > 0 && (
                 <Badge variant="destructive" className="absolute top-4 right-4">
                   -{discountPercentage}%
@@ -194,7 +228,6 @@ export default function ProductPage({ params }) {
           <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-              <p className="text-gray-600 mb-4">{product.short_description}</p>
 
               {/* Rating */}
               {product.rating?.count > 0 && (
@@ -217,8 +250,8 @@ export default function ProductPage({ params }) {
               {/* Price */}
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-3xl font-bold text-[#b88a44]">{formatPrice(product.price)}</span>
-                {product.comparePrice && (
-                  <span className="text-xl text-gray-500 line-through">{formatPrice(product.comparePrice)}</span>
+                {comparePrice && (
+                  <span className="text-xl text-gray-500 line-through">{formatPrice(comparePrice)}</span>
                 )}
                 {discountPercentage > 0 && <Badge variant="destructive">Save {discountPercentage}%</Badge>}
               </div>
@@ -329,13 +362,11 @@ export default function ProductPage({ params }) {
                 {product.tags && product.tags.length > 0 && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {product.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="capitalize">
-                          {tag}
-                        </Badge>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      {product.tags.map((feature, index) => (
+                        <li key={index}>{feature}</li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
                 )}
 
@@ -343,29 +374,31 @@ export default function ProductPage({ params }) {
                 {((product.dimensions?.length || product.dimensions?.width || product.dimensions?.height || product.weight)) && (
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Specifications</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="space-y-2 text-sm">
                       {product.dimensions?.length && (
-                        <div>
-                          <span className="text-gray-600">Length:</span>
-                          <span className="ml-2 font-medium">{product.dimensions.length}"</span>
+                        <div className="border-b border-gray-100 pb-1">
+                          <span className="text-gray-600 mr-2">Length:</span>
+                          <span className="font-medium">{product.dimensions.length}"</span>
                         </div>
                       )}
                       {product.dimensions?.width && (
-                        <div>
-                          <span className="text-gray-600">Width:</span>
-                          <span className="ml-2 font-medium">{product.dimensions.width}"</span>
+                        <div className="border-b border-gray-100 pb-1">
+                          <span className="text-gray-600 mr-2">Width:</span>
+                          <span className="font-medium">{product.dimensions.width}"</span>
                         </div>
                       )}
                       {product.dimensions?.height && (
-                        <div>
-                          <span className="text-gray-600">Height:</span>
-                          <span className="ml-2 font-medium">{product.dimensions.height}"</span>
+                        <div className="border-b border-gray-100 pb-1">
+                          <span className="text-gray-600 mr-2">Height:</span>
+                          <span className="font-medium">{product.dimensions.height}"</span>
                         </div>
                       )}
                       {product.weight && (
-                        <div>
-                          <span className="text-gray-600">Weight:</span>
-                          <span className="ml-2 font-medium">{product.weight} {product.weight_unit || 'kg'}</span>
+                        <div className="border-b border-gray-100 pb-1">
+                          <span className="text-gray-600 mr-2">Weight:</span>
+                          <span className="font-medium">
+                            {product.weight} {product.weight_unit || 'kg'}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -382,12 +415,12 @@ export default function ProductPage({ params }) {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold text-gray-900">Related Products</h2>
               <Button variant="outline" asChild>
-                <Link href={`/shop?category=${product.category.slug}`}>View All {product.category.name}</Link>
+                <Link href={`/shop?category=${product.categories.slug}`}>View All {product.categories.name}</Link>
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
-                <ProductCard key={relatedProduct._id} product={relatedProduct} />
+                <ProductCard key={relatedProduct.id ?? relatedProduct._id} product={relatedProduct} />
               ))}
             </div>
           </div>

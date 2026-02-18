@@ -59,7 +59,9 @@ export default function ShopPage() {
         sortBy: sort
       })
 
-      const res = await fetch(`/api/products?${params}`)
+      const res = await fetch(`/api/products?${params}&t=${Date.now()}`, {
+        cache: "no-store",
+      })
       const data = await res.json()
       setProducts(data.products || [])
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 })
@@ -154,7 +156,7 @@ export default function ShopPage() {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category._id} value={category.slug}>
+                  <SelectItem key={category.id ?? category._id} value={category.slug}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -234,7 +236,7 @@ export default function ShopPage() {
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
-              <ProductCard key={product._id} product={product} />
+              <ProductCard key={product.id ?? product._id} product={product} />
             ))}
           </div>
         ) : (

@@ -29,13 +29,20 @@ export default function ProductCard({ product }) {
   }
 
   const primaryImage = product.images?.find((img) => img.isPrimary) || product.images?.[0]
-  const discountPercentage = product.comparePrice
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+  // Supabase uses snake_case (compare_price, is_featured)
+  const comparePrice = product.compare_price ?? product.comparePrice
+  const isFeatured = product.is_featured ?? product.isFeatured
+  const discountPercentage = comparePrice
+    ? Math.round(((comparePrice - product.price) / comparePrice) * 100)
     : 0
+
+  const productHref = product?.id
+    ? `/products/${product.slug}?id=${product.id}`
+    : `/products/${product.slug}`
 
   return (
     <Card className="group hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
-      <Link href={`/products/${product.slug}`} className="flex-1 flex flex-col">
+      <Link href={productHref} className="flex-1 flex flex-col">
         <CardContent className="p-0 flex-1 flex flex-col">
           <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
             <Image
@@ -44,7 +51,7 @@ export default function ProductCard({ product }) {
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            {product.isFeatured && <Badge className="absolute top-2 left-2 bg-[#b88a44]">Featured</Badge>}
+            {isFeatured && <Badge className="absolute top-2 left-2 bg-[#b88a44]">Featured</Badge>}
             {discountPercentage > 0 && (
               <Badge variant="destructive" className="absolute top-2 right-2">
                 -{discountPercentage}%
@@ -95,8 +102,8 @@ export default function ProductCard({ product }) {
             {/* Price */}
             <div className="mt-auto flex items-center gap-2">
               <span className="text-lg font-bold text-[#b88a44]">{formatPrice(product.price)}</span>
-              {product.comparePrice && (
-                <span className="text-sm text-muted-foreground line-through">{formatPrice(product.comparePrice)}</span>
+              {comparePrice && (
+                <span className="text-sm text-muted-foreground line-through">{formatPrice(comparePrice)}</span>
               )}
             </div>
 
