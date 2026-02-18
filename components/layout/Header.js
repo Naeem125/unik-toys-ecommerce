@@ -87,13 +87,13 @@ export default function Header() {
           <Link href="/" className="flex items-center group">
             <div className="relative">
               <Image
-                src="/images/logo-1.jpeg"
+                src="/images/unik-logo.png"
                 alt="Unik Toys"
-                width={160}
+                width={100}
                 height={80}
-                className="h-16 w-auto transition-transform duration-200 group-hover:scale-105"
+                className="transition-transform duration-200 group-hover:scale-105"
               />
-              <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-lg blur opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
+              {/* <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-yellow-400 rounded-lg blur opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div> */}
             </div>
           </Link>
 
